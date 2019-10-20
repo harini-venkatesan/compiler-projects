@@ -1,3 +1,5 @@
+/* Harini Venkatesan - phase 1 */
+
 %{
 	int currLine = 1, currPos = 1;
 %}
@@ -50,6 +52,12 @@ DIGIT    [0-9]
 "<="           {printf("LTE\n"); currPos += yyleng;}
 ">="           {printf("GTE\n"); currPos += yyleng;}
 
+{DIGIT}+       {printf("NUMBER %s\n", yytext); currPos += yyleng; }
+
+[a-z|A-Z][a-z|A-Z|0-9]*                 {printf("IDENT %s\n", yytext); currPos += yyleng;} /*Make sure it does not start with a digit or an underscore*/
+
+[a-z|A-Z][a-z|A-Z|0-9|_]*[a-z|A-Z|0-9]  {printf("IDENT %s\n", yytext); currPos += yyleng;} /*Identifiers with underscore in the middle*/ 
+
 
 ";"	       {printf("SEMICOLON\n"); currPos += yyleng;}
 ":"	       {printf("COLON\n"); currPos += yyleng;}
@@ -60,25 +68,18 @@ DIGIT    [0-9]
 "]"	       {printf("R_SQUARE_BRACKET\n"); currPos += yyleng;}
 ":="	       {printf("ASSIGN\n"); currPos += yyleng;}
 
-[##].*	       {currLine++; currPos = 1;} /*Comments are avoided*/
+[##].*	       {currLine++; currPos = 1;}   /*Comments are avoided*/
 
-[ ]            {currPos += yyleng;}
+[ ]            {currPos += yyleng;}        /*Spaces are avoided*/
 
-{DIGIT}+       {printf("NUMBER %s\n", yytext); currPos += yyleng; }
+[ \t]+         {currPos += yyleng;}	 
 
-[ \t]+         {/* ignore spaces */ currPos += yyleng;}
-
-"\n"           {currLine++; currPos = 1;}
+"\n"           {currLine++; currPos = 1;} /*Move to a new line */
 
 
-[0-9|_][a-z|A-Z|0-9|_]*[a-z|A-Z|0-9|_]      {printf("Error at line %d, column %d: Identifier \"%s\" must begin with a letter\n",currLine,currPos,yytext); currPos += yyleng; exit(0);} 
+[0-9|_][a-z|A-Z|0-9|_]*[a-z|A-Z|0-9|_]      {printf("Error at line %d, column %d: Identifier \"%s\" must begin with a letter\n",currLine,currPos,yytext); currPos += yyleng; exit(0);} /* If it begins with an underscore or a number*/
 
-[a-z|A-Z][a-z|A-Z|0-9|_]*[_]               {printf("Error at line %d, column %d: Identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); currPos+= yyleng; exit(0);} 
-
-[a-z|A-Z][a-z|A-Z|0-9|_]*[a-z|A-Z|0-9]	{printf("IDENT %s\n", yytext); currPos += yyleng;/*Multi letter Identifier*/} 
-
-[a-z|A-Z][a-z|A-Z|0-9]*			{printf("IDENT %s\n", yytext); currPos += yyleng;/*Single Letter Identifier and Multi letter Identifier with underscores */}
-
+[a-z|A-Z][a-z|A-Z|0-9|_]*[_]                {printf("Error at line %d, column %d: Identifier \"%s\" cannot end with an underscore\n", currLine, currPos, yytext); currPos+= yyleng; exit(0);} /* If it ends with an underscore */
 
 .              {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", currLine, currPos, yytext); exit(0);}
 
