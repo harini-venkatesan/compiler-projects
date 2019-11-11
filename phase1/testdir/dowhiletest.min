@@ -1,0 +1,25 @@
+function main;
+
+beginparams
+endparams
+
+beginlocals
+
+  n, m : integer;
+
+endlocals
+
+beginbody	## main program
+
+  read n;
+  m := n;
+  do
+  beginloop
+    write n;
+    n := (n+1);
+  endloop
+  while n-m<=5;
+
+write n;
+
+endbody

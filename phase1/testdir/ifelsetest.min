@@ -1,0 +1,24 @@
+function main;
+
+beginparams
+endparams
+
+beginlocals
+
+  m, n, o : integer;
+
+endlocals
+
+beginbody	## main program
+
+  read n;
+  if n >=100 then
+    write n;
+  else
+    m := n-1;
+    write m;
+  endif;
+
+write o;
+
+endbody
