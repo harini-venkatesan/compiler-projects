@@ -3,12 +3,12 @@
  #include <stdlib.h>
  #include <cstring>
  #include "heading.h"
- void yyerror(const char* s);
+ int yyerror(string s);
  int yylex(void);
 %}
 
 %union{
-  char* dval;
+  string* dval;
   int ival;
 }
 
@@ -56,18 +56,46 @@ assign:		INTEGER {printf("assign -> INTEGER\n");}
 		;
 
 statements:	statement SEMICOLON statements {printf("statements -> statement SEMICOLON statements\n");}
-		| {printf("statements -> epsilon\n");}
+		|statement SEMICOLON {printf("statements -> statement SEMICOLON\n");}
 		;
 
-statement:	var ASSIGN expression {printf("statement -> var ASSIGN expression\n");}
-		| IF bool_exp THEN statements ENDIF {printf("statement -> IF bool_exp THEN statements ENDIF\n");}
-		| IF bool_exp THEN statements ELSE statements ENDIF {printf("statement -> IF bool_exp THEN statements ELSE statements ENDIF\n");}
-		| WHILE bool_exp BEGINLOOP statements ENDLOOP {printf("statement -> WHILE bool_exp BEGINLOOP statements ENDLOOP\n");}
-		| DO BEGINLOOP statements ENDLOOP WHILE bool_exp {printf("statement -> DO BEGINLOOP statements ENDLOOP WHILE bool_exp\n");}
-		| READ vars {printf("statement -> READ vars\n");}
-		| WRITE vars {printf("statement -> WRITE vars\n");}
-		| CONTINUE {printf("statement -> CONTINUE\n");}
-		| RETURN expression {printf("statement -> RETURN expression\n");}
+statement:	st1 {printf("statement -> st1\n");}
+		| st2 {printf("statement -> st2\n");}
+		| st3 {printf("statement -> st3\n");} 
+		| st4 {printf("statement -> st4\n");}
+		| st5 {printf("statement -> st5\n");}
+		| st6 {printf("statement -> st6\n");}
+		| st7 {printf("statement -> st7\n");}
+		| st8 {printf("statement -> st8\n");}
+		;
+
+st1:		var ASSIGN expression {printf("st1 -> var ASSIGN expression\n");}
+		;
+
+st2:		IF bool_exp THEN statements ENDIF {printf("st2 -> IF bool_exp THEN statements ENDIF\n");}
+		| IF bool_exp THEN statements ELSE statements ENDIF {printf("st2 -> IF bool_exp THEN statements ELSE statements ENDIF\n");}
+		;
+
+st3:		 WHILE bool_exp BEGINLOOP statements ENDLOOP {printf("st3 -> WHILE bool_exp BEGINLOOP statements ENDLOOP\n");}
+		;
+
+st4:		DO BEGINLOOP statements ENDLOOP WHILE bool_exp {printf("st4 -> DO BEGINLOOP statements ENDLOOP WHILE bool_exp\n");}
+		;
+
+st5:		READ  var svar {printf("st5 -> READ vars\n");}
+		;
+
+st6:		WRITE var svar {printf("st6 -> WRITE vars\n");}
+		;
+
+st7:		CONTINUE {printf("st7 -> CONTINUE\n");}
+		;
+
+st8:		RETURN expression {printf("st8 -> RETURN expression\n");}
+		;
+
+svar:		{printf("svar -> epsilon\n");}
+		| COMMA var svar {printf("svar -> COMMA var svar\n");}
 		;
 
 bool_exp:	relation_and_exp {printf("bool_exp -> relation_and_exp\n");}
@@ -75,7 +103,7 @@ bool_exp:	relation_and_exp {printf("bool_exp -> relation_and_exp\n");}
 		;
 
 relation_and_exp: relation_exp {printf("relation_and_exp -> relation_exp\n");}
-		  | relation_exp AND relation_exp {printf("relation_and__exp -> relation_exp AND relation_exp\n");}
+		  | relation_and_exp AND relation_exp {printf("relation_exp -> relation_exp AND relation_exp\n");}
 		  ;
 
 relation_exp:	rexp {printf("relation_exp -> rexp");}
@@ -96,18 +124,21 @@ comp:		EQ {printf("comp -> EQ\n");}
 		| GTE {printf("comp -> GTE\n");}
 		;
 
-expression:	multiplicative_expression {printf("expression -> multiplicative_expression\n");}
-		| multiplicative_expression ADD multiplicative_expression {printf("expression -> multiplicative_expression ADD multiplicative_expression\n");}
-		| multiplicative_expression SUB multiplicative_expression {printf("expression -> multiplicative_expression SUB multiplicative_expression\n");}
+expression:	multiplicative_expression expaddsub {printf("expression -> multiplicative_expression expaddsub\n");}
+		;
+
+expaddsub:	/*empty*/	{printf("expaddsub -> epsilon\n");}
+		| ADD multiplicative_expression expaddsub {printf("expression -> ADD expaddsub\n");}
+		| SUB multiplicative_expression expaddsub {printf("expression -> SUB expaddsub\n");}
 		;
 
 multiplicative_expression: term multi_term{printf("multiplicative_expression -> term multi_term\n");}
 			   ;
 
 multi_term:	/*empty*/ {printf("multi_term -> epsilon\n");}
-		| MULT multi_term {printf("mutli_term -> MULT term\n");}
-		| DIV multi_term {printf("multi_term -> DIV term\n");}
-		| MOD multi_term {printf("mutli_term -> MOD term\n");}
+		| MULT term  multi_term {printf("mutli_term -> MULT term\n");}
+		| DIV term multi_term {printf("multi_term -> DIV term\n");}
+		| MOD term multi_term {printf("mutli_term -> MOD term\n");}
 		;
 
 term:		var {printf("term -> var\n");}
@@ -127,16 +158,16 @@ expr_term:	expression {printf("expr_term -> expression\n");}
 		| expression COMMA expr_term {printf("expr_term -> expression COMMA expr_term\n");}
 		;	
 
-var:		ident {printf("var -> ident\n");}
-		| ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET {printf("var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n");}
+var:		IDENT {printf("var -> ident\n");}
+		| IDENT L_SQUARE_BRACKET expression R_SQUARE_BRACKET {printf("var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n");}
 		;
 
 vars:		var {printf("vars -> var\n");}
 		| var COMMA vars {printf("vars -> var COMMA vars\n");}
-				
+		;		
 %%	
 
-void yyerror(const char* s)
+int yyerror(string s)
 {
   extern int yylineno;	// defined and maintained in lex.c
   extern char *yytext;	// defined and maintained in lex.c
@@ -144,6 +175,4 @@ void yyerror(const char* s)
   cerr << "ERROR: " << s << " at symbol \"" << yytext;
   cerr << "\" on line " << yylineno << endl;
   exit(1);
-}
-
-	
+}	
