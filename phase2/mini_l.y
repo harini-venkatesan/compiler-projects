@@ -20,8 +20,8 @@
 %token SEMICOLON COLON COMMA R_PAREN L_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET RETURN ASSIGN
 %token <ival> NUMBER
 %token <dval> IDENT
-%left MULT DIV MOD ADD SUB AND OR LT GT LTE GTE EQ NEQ ASSIGN
-%right NOT  
+%left MULT DIV MOD ADD SUB AND OR LT GT LTE GTE EQ NEQ 
+%right NOT ASSIGN 
 
 
 %%
@@ -127,7 +127,7 @@ comp:		EQ {printf("comp -> EQ\n");}
 expression:	multiplicative_expression expaddsub {printf("expression -> multiplicative_expression expaddsub\n");}
 		;
 
-expaddsub:	/*empty*/	{printf("expaddsub -> epsilon\n");}
+expaddsub:	/*empty*/ {printf("expaddsub -> epsilon\n");}
 		| ADD multiplicative_expression expaddsub {printf("expression -> ADD expaddsub\n");}
 		| SUB multiplicative_expression expaddsub {printf("expression -> SUB expaddsub\n");}
 		;
