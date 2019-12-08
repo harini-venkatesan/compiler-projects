@@ -1,239 +1,964 @@
 %{
+// #include "heading.h"
  #include <stdio.h>
  #include <stdlib.h>
+ #include <string.h>
+ #include <assert.h>
+ #include <vector>
  #include <cstring>
- #include "heading.h"
- int yyerror(string s);
+ #include <sstream>
+ #include <iostream>
+ 
+ using namespace std;
+ 
  int yylex(void);
+ void yyerror(const char *msg);
+ extern int currline;
+ extern int currpos;
+ extern FILE * yyin;
+
+/*
+    template <typename T>
+    std::string to_string(T value)
+    {
+      //create an output string stream
+      std::ostringstream os ;
+
+      //throw the value into the string stream
+      os << value ;
+
+      //convert the string stream into a string and return
+      return os.str() ;
+    }
  
- int param_val = 0;
- bool add_to_param_table = false; 
+ */
 
- vector<string> param_table;
- vector<string> func_table;
- vector<string> sym_table;
- vector<string> sym_type;
- vector<string> op;
- vector<string> stmnt_vctr;
+ vector<string> symbol_table; // table for symbols
+ vector<string> symbol_table_type; // table for symbol types
+ vector<string> param_table; // parameter table
+ vector<string> ops_table; // operators table
+ vector<string> ops_table_type; // operators type table
 
- string temp;
- int temp_count;
- int label_count;
+ vector<string> statements;  
+ vector<string> statements_all;
+ vector<string> functions;
 
- vector <vector <string> > if_label;
- vector <vector <string> > loop_label; 
+ vector<vector<string> > ifLabel;
+ vector<vector<string> > LoopLabel;
+ int labelCount = 0;
+ int varCount = 0;
+ int tempCount = 0;
+ int paramCount = 0;
 
- stack <string> param_queue;
- stack <string> read_queue;
- 
- stringstream m;  
+
+ bool isParam;
+ bool isMain;
+ bool isError;
+ unsigned index(string s){
+ 	for (unsigned i = 0; i < symbol_table.size(); i++){
+		if(symbol_table[i] == s){
+			return i;
+		}
+	}
+	for (unsigned i = 0; i < param_table.size(); i++){
+		if (param_table[i] == s){
+			return i;
+		}
+	}
+	for (unsigned i = 0; i < functions.size(); i++){
+		if(functions[i] == s){
+			return i;
+		}
+	}
+ }
+
+ bool identiferUsed (string s) {
+	for (unsigned i = 0; i < symbol_table.size(); i++) {
+		if (symbol_table[i] == s) {
+			return true;
+		}
+	}
+	for (unsigned i = 0; i < param_table.size(); i++) {
+		if (param_table[i] == s) {
+			return true;
+		}
+	}
+	for (unsigned i = 0; i < functions.size(); i++) {
+		if (functions[i] == s) {
+			return true;
+		}
+	}
+	return false;
+ }
+
 %}
 
+
+
+%error-verbose
+%start prog_start
+%token FUNCTION BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY
+%token INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE
+%token AND OR NOT TRUE FALSE RETURN SUB ADD MULT DIV MOD EQ NEQ LT GT LTE GTE
+%token SEMICOLON COLON COMMA L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET ASSIGN
+%token <ival> NUMBER
+%token <string> IDENT
+%left MULT DIV MOD
+%left ADD SUB
+%left EQ NEQ LT GT LTE GTE
+%right NOT
+%left AND
+%left OR
+%right ASSIGN
+%nonassoc UMINUS
+
 %union{
-  string* dval;
   int ival;
+  char *string;
+  double dval;
 }
 
+%%
+prog_start: functions
+			;
 
-%start prog_start
+functions: function functions 
+			| /* */
+			;
 
-%token INTEGER ARRAY OF FUNCTION BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY
-%token IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE
-%token SEMICOLON COLON COMMA R_PAREN L_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET RETURN ASSIGN
-%token <ival> NUMBER
-%token <dval> IDENT
-%left MULT DIV MOD ADD SUB AND OR LT GT LTE GTE EQ NEQ 
-%right NOT ASSIGN 
+function_ident: FUNCTION IDENT 
+				{
+					functions.push_back($2);
+					statements_all.push_back(string("func ") + functions.back());
+				}
+				;
 
+begin_params: BEGIN_PARAMS {isParam = true; }
+			  ;
+
+end_params: END_PARAMS {isParam = false; }
+			;
+
+function: function_ident SEMICOLON begin_params declarations end_params BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY 	
+			{
+				
+				
+				for(unsigned i = 0; i < symbol_table.size(); i++) {
+					if(symbol_table_type[i] == "INTEGER") {
+						statements_all.push_back(". " + symbol_table[i]);
+					}
+					else {
+						statements_all.push_back(".[] " + symbol_table[i] + ", " + symbol_table_type[i]);
+					}
+				}
+
+				 while(!param_table.empty()) {
+				 	statements.push_back("= " + param_table.back() + ", $" + to_string(paramCount)); 
+				 	
+				 	param_table.pop_back(); 
+				 	paramCount++;
+				 } 
+				 
+				
+
+				
+				for(unsigned i = 0; i < statements.size(); i++) {
+					statements_all.push_back(statements[i]);
+				}
+
+				
+				symbol_table.clear();
+				symbol_table_type.clear();
+				ops_table.clear();
+				ops_table_type.clear();
+				param_table.clear();
+				statements.clear();
+				paramCount = 0; 
+
+				statements_all.push_back("endfunc");
+			}
+			;
+
+
+declarations: declaration SEMICOLON declarations
+			| /*  */
+			;
+
+declaration: identifiers COLON assign_dec 
+
+assign_dec:	INTEGER 
+			{
+				symbol_table_type.push_back("INTEGER");
+			}
+			| ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
+					if($3 == 0){
+						printf("Error line %d: %d is not a valid array size\n", currline, $3);
+						isError = true;					
+					}
+					else {
+						symbol_table_type.push_back(to_string($3));
+						}
+			}
+			| ARRAY L_SQUARE_BRACKET SUB NUMBER R_SQUARE_BRACKET OF INTEGER{
+					printf("Error line %d: -%d is not a valid array size\n", currline, $4);
+					isError = true;
+			}
+			;
+
+identifiers:  IDENT {
+				for (unsigned i = 0; i < symbol_table.size(); i++) {
+					if (symbol_table[i] == $1) {
+					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
+					
+					isError = true;
+					}
+				}
+				for (unsigned i = 0; i < param_table.size(); i++) {
+					if (param_table[i] == $1) {
+						printf("Error Line %d: parameter %s is already defined \n", currline, $1);
+
+						isError = true;
+					}
+				}
+				for (unsigned i = 0; i < functions.size(); i++) {
+					if (functions[i] == $1) {
+						printf("Error Line %d: function %s is already defined \n", currline, $1);
+
+						isError = true;
+					}
+				}
+
+				if (isParam == true) {
+					param_table.push_back($1);
+				}
+				symbol_table.push_back($1);
+			}
+
+			| IDENT COMMA identifiers {
+				for (unsigned i = 0; i < symbol_table.size(); i++) {
+					if (symbol_table[i] == $1) {
+					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
+					
+					isError = true;
+					}
+				}
+				for (unsigned i = 0; i < param_table.size(); i++) {
+					if (param_table[i] == $1) {
+						printf("Error Line %d: parameter %s is already defined \n", currline, $1);
+
+						isError = true;
+					}
+				}
+				for (unsigned i = 0; i < functions.size(); i++) {
+					if (functions[i] == $1) {
+						printf("Error Line %d: function %s is already defined \n", currline, $1);
+
+						isError = true;
+					}
+				}
+
+				symbol_table.push_back($1);
+				symbol_table_type.push_back("INTEGER");
+
+			}
+			;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+statements: statement SEMICOLON statements 
+			| statement SEMICOLON
+			;
+
+statement:	st1 
+			| st2 
+			| st3 
+			| st4 
+			| st5 
+			| st6 
+			| st7 
+			| st8 
+			| st9
+			;
+
+st1:	assign_variable ASSIGN expression {
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op = ops_table.back();
+				ops_table.pop_back();
+				string optype = ops_table_type.back();
+				ops_table_type.pop_back();
+				if (optype == "INTEGER") {
+					statements.push_back("= " + op + ", " + op2);
+				}
+				else {
+					statements.push_back("[]= _" + op + ", " + op2);
+				}
+			}
+		;
+
+assign_variable:
+			
+			IDENT { unsigned tmp = 0;
+				for (unsigned i = 0; i < symbol_table.size(); i++) {
+					if (symbol_table[i] == $1) {
+					printf("Error Line %d: used variable %s is already defined \n", currline, $1);
+					
+					isError = true;
+					tmp = i;
+					}
+				}
+				for (unsigned i = 0; i < param_table.size(); i++) {
+					if (param_table[i] == $1) {
+						printf("Error Line %d: used variable %s is already defined \n", currline, $1);
+
+						isError = true;
+						tmp = i;
+					}
+				}
+				for (unsigned i = 0; i < functions.size(); i++) {
+					if (functions[i] == $1) {
+						printf("Error Line %d: used variable %s is already defined \n", currline, $1);
+
+						isError = true;
+						tmp = i;
+					}
+				}
+
+				
+				//unsigned tmp = index($1);
+				if(symbol_table_type[tmp] != "INTEGER"){
+					printf("Error line %d: used int variable %s does not have an index\n", currline, $1);
+					isError = true;
+				}
+				string temp_index = $1;
+				ops_table.push_back(temp_index);
+				ops_table_type.push_back("INTEGER");
+			}
+
+			| IDENT L_SQUARE_BRACKET expressions R_SQUARE_BRACKET 
+				{ unsigned tmp = 0;
+				for (unsigned i = 0; i < symbol_table.size(); i++) {
+					if (symbol_table[i] == $1) {
+					printf("Error Line %d: used variable %s is already defined \n", currline, $1);
+					
+					isError = true;
+					tmp = i;
+					}
+				}
+				for (unsigned i = 0; i < param_table.size(); i++) {
+					if (param_table[i] == $1) {
+						printf("Error Line %d: used variable %s is already defined \n", currline, $1);
+
+						isError = true;
+						tmp = i;
+					}
+				}
+				for (unsigned i = 0; i < functions.size(); i++) {
+					if (functions[i] == $1) {
+						printf("Error Line %d: used variable %s is already defined \n", currline, $1);
+
+						isError = true;
+						tmp = i;
+					}
+				}
+				//unsigned tmp = index($1);
+				if(symbol_table_type[tmp] == "INTEGER"){
+					printf("Error integer is used as an Array\n");
+				}
+				string temp = $1;
+				string size = ops_table.back();
+					ops_table.pop_back();
+					ops_table_type.pop_back();
+				string id = temp + ", " + size;
+				ops_table.push_back(id);
+				ops_table_type.push_back("ARRAY");
+			} 
+			;
+
+st2:	 if_bool THEN statements ENDIF { 
+				statements.push_back(":= " + ifLabel.back()[1]);
+				ifLabel.pop_back();
+			}
+		;
+
+
+st3:	 if_bool THEN statements if_else ENDIF { 
+				statements.push_back(": " + ifLabel.back()[2]);
+				ifLabel.pop_back();
+			}
+		;
+
+if_bool:  IF bool_exp {		/* ?= test_codition_temp_variable, goto first_label
+               		          =:second_label
+              			  :first_label
+             			   ## Statements
+                		  :second_label
+            			*/
+
+				vector<string> temp;
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				ifLabel.push_back(temp);
+				statements.push_back("?:= " + ifLabel.back()[0] + ", " + ops_table.back());
+					//if condition evaluate then goto first_label
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				statements.push_back(":= " + ifLabel.back()[1]); //goto second_label
+				statements.push_back(": " + ifLabel.back()[0]);  //declaration first_laebl
+			}
+			;
+
+if_else:  ELSE statements {
+				statements.push_back(":= " + ifLabel.back()[2]);  
+				statements.push_back(": " + ifLabel.back()[1]);
+			}
+			;
+
+st4:	 while_bool statements ENDLOOP { 
+				statements.push_back(":= " + LoopLabel.back()[1]);
+				statements.push_back(": " + LoopLabel.back()[3]);
+				LoopLabel.pop_back();
+			}
+		;
+
+st5:	 do_loop WHILE bool_exp { 
+				statements.push_back("?:= " + LoopLabel.back()[1] + ", " + ops_table.back());
+				
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				LoopLabel.pop_back();
+			}
+	;
+
+
+
+while_bool:  while bool_exp BEGINLOOP {
+				statements.push_back("?:= " + LoopLabel.back()[2] + ", " +ops_table.back());
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				statements.push_back(":= " + LoopLabel.back()[3]);
+				statements.push_back(": " + LoopLabel.back()[2]);
+		}
+            ;
+
+while:   WHILE {		/* :while_loop_[NUM]
+		       		 //conditional statements
+		        	?= test_codition_temp_variable, conditonal_true_[NUM]
+		        	=:conditional_false_[NUM]
+		        	:conditional_true_[NUM]
+		        	## Statements
+		        	=: while_loop_[NUM]
+		        	:conditional_false[NUM]
+		    		*/
+
+				vector<string> temp;
+				temp.push_back("while");
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				LoopLabel.push_back(temp);
+				statements.push_back(": " + LoopLabel.back().at(1));
+		}
+	;
+
+do_loop:   do statements ENDLOOP {
+				statements.push_back(": " + LoopLabel.back()[2]);
+		}
+	;
+
+do:	DO BEGINLOOP {		 /* :do_while_loop_[NUM]
+				=:conditional_false_[NUM]
+				:conditional_true_[NUM]
+				## Statements
+				?= test_codition_temp_variable, conditonal_true_[NUM]
+			  	  */
+
+				vector<string> temp;
+				temp.push_back("do_while");
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				LoopLabel.push_back(temp);
+				statements.push_back(": " + LoopLabel.back()[1]);
+		}
+	;
+
+		
+st6:	READ readVars
+	;
+
+st7:	WRITE writeVars
+	;
+
+
+readVars:	var {
+				string op1 = ops_table.back();
+				string op1type = ops_table_type.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				if (op1type == "INTEGER") {
+					statements.push_back(".< " + op1);
+				}
+				else {
+					statements.push_back(".[]< " + op1);
+				}
+			}
+		
+		| var COMMA readVars { 
+				string op1 = ops_table.back();
+				string op1type = ops_table_type.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				if (op1type == "INTEGER") {
+					statements.push_back(".< " + op1);
+				}
+				else {
+					statements.push_back(".[]< " + op1);
+				}
+			}
+		;
+
+writeVars: 	var {
+				string op1 = ops_table.back();
+				string op1type = ops_table_type.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				if (op1type == "INTEGER") {
+					statements.push_back(".> " + op1);
+				}
+				else {
+					statements.push_back(".[]> " + op1);
+				}
+			}
+		
+		| var COMMA readVars { 
+				string op1 = ops_table.back();
+				string op1type = ops_table_type.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				if (op1type == "INTEGER") {
+					statements.push_back(".> " + op1);
+				}
+				else {
+					statements.push_back(".[]> " + op1);
+				}
+			}
+		;
+
+
+			
+st8:	CONTINUE {	//transfer control back to recent while loop - := while_loop_[NUM]
+				if(!LoopLabel.empty()) {
+					string loopType = LoopLabel.back()[0];
+					if (loopType == "while") {
+						statements.push_back(":= " + LoopLabel.back()[1]);
+					}
+					else { 
+						statements.push_back(":= " + LoopLabel.back()[2]);
+					}
+				}
+				if (LoopLabel.empty()){
+					printf("Error line %d: continue statement not within a loop\n", currline);
+					isError = true;
+				}
+			}
+	;
+
+st9:	RETURN expression {
+				statements.push_back("ret " + ops_table.back());
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+			}
+	;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+
+
+bool_exp:	relation_and_exp 
+			
+		| relation_and_exp OR bool_exp {
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				statements.push_back("|| " + temp + ", " + op1 + ", " + op2);
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+		;
+
+relation_and_exp:	relation_exp 
+		
+			| relation_exp AND relation_and_exp {
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("&& " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			} 
+		;
+
+relation_exp: 	rexp
+			
+		| NOT rexp {
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("! " + temp + ", " + op1);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+		;
+
+rexp:		expression comp expression {
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				string comp = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back(comp + " " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+			
+		| TRUE {	//= t[temp_var_num], 1
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+				
+				statements.push_back("= " + temp + ", 1");
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+			
+		| FALSE {	//= t[temp_var_num], 0
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+				
+				statements.push_back("= " + temp + ", 0");
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+
+		| L_PAREN bool_exp R_PAREN 
+		
+		;
+
+comp:			EQ {
+				ops_table.push_back("==");
+				ops_table_type.push_back("null");
+			}
+
+			| NEQ {
+				ops_table.push_back("!=");
+				ops_table_type.push_back("null");
+			}
+
+			| LT {
+				ops_table.push_back("<");
+				ops_table_type.push_back("null");
+			} 
+
+			| GT {
+				ops_table.push_back(">");
+				ops_table_type.push_back("null");
+			}
+
+			| LTE {
+				ops_table.push_back("<=");
+				ops_table_type.push_back("null");
+			}
+
+			| GTE {
+				ops_table.push_back(">=");
+				ops_table_type.push_back("null");
+			}
+			;
+
+expressions:	expression 
+		
+		| expression COMMA expression 
+
+		;
+			
+expression:	mult_expression 
+			
+		| mult_expression ADD expression { 
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("+ " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+
+		| mult_expression SUB expression {
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("- " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+		;
+
+mult_expression:	term
+			
+			| term MULT mult_expression {
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("* " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+
+			| term DIV mult_expression {
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("/ " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+
+			| term MOD mult_expression {
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("% " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+		;
+
+term:		var 
+			
+		| NUMBER {
+				ops_table.push_back(to_string($1));
+				ops_table_type.push_back("INTEGER");
+			}
+			
+		| SUB NUMBER {
+				ops_table.push_back(to_string($2*-1));
+				ops_table_type.push_back("INTEGER");
+			}
+			
+		| L_PAREN expression R_PAREN 
+
+		| SUB L_PAREN expression R_PAREN {
+				string temp = "_t"+to_string(tempCount++);
+				
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("- " + temp + ", 0, " + op1);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+			
+		| IDENT L_PAREN expressions R_PAREN { //call a function
+				// check if the funciton $1 has been defined
+				bool findFunction = false;
+				for (unsigned i = 0; i < functions.size(); i++) {
+					if (functions[i] == $1) {
+						findFunction = true;
+						break;
+					}
+				}
+				if (!findFunction) {
+					printf("Error line %d: Function %s not defined\n", currline,$1 );
+					isError = true;
+				}
+
+				string temp = "_t"+to_string(tempCount++);
+					symbol_table.push_back(temp);
+					symbol_table_type.push_back("INTEGER");
+
+				string op1 = ops_table.back();
+					ops_table.pop_back();
+					ops_table_type.pop_back();
+
+				statements.push_back("param " + op1);
+				statements.push_back(string("call ") + $1 + ", " + temp);
+
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+		;
+
+var: 		IDENT {
+				if (!identiferUsed($1)) {
+					printf("Error line %d: used variable %s was not previously defined\n", currline, $1);
+					//yyerror("variable not defined.");
+					isError = true;
+				}
+				unsigned tmp = index($1);
+				if(symbol_table_type[tmp] != "INTEGER"){
+					printf("Error line %d: used array variable \"%s\" is missing a specified index\n", currline, $1);
+					isError = true;
+				}
+				string temp = $1;
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+			
+		| IDENT L_SQUARE_BRACKET expressions R_SQUARE_BRACKET {
+				if (!identiferUsed($1)) {
+					printf("Error line %d: used variable %s was not previously defined\n", currline, $1);
+					//yyerror("variable not defined.");
+					isError = true;
+				}
+				unsigned tmp = index($1);
+				if(symbol_table_type[tmp] == "INTEGER"){
+					printf("Error line %d: used integer variable \"%s\" does not have an index\n",currline, $1);
+					isError = true;
+				}
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string arraySize = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				ops_table.push_back(temp);
+				ops_table_type.push_back("ARRAY");
+				statements.push_back("=[] "+ temp + ", " + $1 + ", " + arraySize);
+			} 
+		;
 
 %%
 
-prog_start:	functions 
-		;
+
+int main(int argc, char **argv) {
+	if (argc > 1) {
+		yyin = fopen(argv[1], "r");
+		if (yyin == NULL) {
+			printf("syntax: %s filename\n", argv[0]);
+		}
+	}
+	yyparse();
+	for(unsigned i = 0; i < functions.size(); i++) {
+		if (functions[i] == "main") {
+			isMain = true;
+			break;
+		}
+	}
+
+	if (!isMain) {
+		printf("Error: No main function defined\n");
+		return -1;
+	}
+	if (isError) {
+		printf("Error\n");
+		return -1;
+	}
+
+	for(unsigned i = 0; i < statements_all.size(); i++) {
+		cout << statements_all[i] <<endl;
+	}
+
+	return 0;
+}
+
+void yyerror(const char *msg) {
 
 
-functions:	function functions
-		| /**/
-		;
 
-begin_params:	BEGIN_PARAMS { add_to_param_table = true;}
-		;
+	printf("** Line %d, position %d: %s\n", currline, currpos, msg);
+}
 
-end_params:	END_PARAMS { add_to_param_table = false;}
-		;
-
-function:	FUNCTION IDENT SEMICOLON begin_params declarations end_params BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY
-		 {  
-			func_table.push_back(*($2));
-			cout <<"func "<<*($2)<<endl;
-			
-			for(unsigned int i = 0; i < sym_table.size(); i++)
-			 { if(sym_type.at(i) == "INTEGER")
-				cout << ". "<<sym_table.at(i) << endl;
-			   else 
-				cout << ".[] "<<sym_table.at(i) <<", "<<sym_type.at(i) <<endl;
-			 }
-				
-			while(!param_table.empty()){
-				cout<<"= "<<param_table.front()<<", $"<<param_val<<endl;
-				param_table.erase(param_table.begin());
-				param_val += 1;
-			}
-	
-	 		for(unsigned int j = 0; j < stmnt_vctr.size(); j++){
-				cout << stmnt_vctr.at(j) << endl; }
-
-			cout <<"end func"<<endl;
-			stmnt_vctr.clear();
-			sym_table.clear();
-			sym_type.clear();
-			param_table.clear();
-			param_val = 0; 
-		  }
-		;
-
-declarations:	declaration SEMICOLON declarations 
-		| /* */
-		;
-
-declaration:	identifiers COLON assign 
-		;
-
-identifiers:	ident
-		| IDENT COMMA identifiers 
-		  { sym_table.push_back("_" + *($1));
-		    sym_type.push_back("INTEGER"); 
-		  } 
-		;
-
-ident:		IDENT { sym_table.push_back("_" + *($1)); 
-			if(add_to_param_table == true)
-				param_table.push_back("_" + *($1));
-		      }
-		;
-
-assign:		INTEGER { sym_type.push_back("INTEGER"); }
-		|ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {  }
-		;
-
-statements:	statement SEMICOLON statements {printf("statements -> statement SEMICOLON statements\n");}
-		|statement SEMICOLON {printf("statements -> statement SEMICOLON\n");}
-		;
-
-statement:	st1 {printf("statement -> st1\n");}
-		| st2 {printf("statement -> st2\n");}
-		| st3 {printf("statement -> st3\n");} 
-		| st4 {printf("statement -> st4\n");}
-		| st5 {printf("statement -> st5\n");}
-		| st6 {printf("statement -> st6\n");}
-		| st7 {printf("statement -> st7\n");}
-		| st8 {printf("statement -> st8\n");}
-		;
-
-st1:		var ASSIGN expression {printf("st1 -> var ASSIGN expression\n");}
-		;
-
-st2:		IF bool_exp THEN statements ENDIF {printf("st2 -> IF bool_exp THEN statements ENDIF\n");}
-		| IF bool_exp THEN statements ELSE statements ENDIF {printf("st2 -> IF bool_exp THEN statements ELSE statements ENDIF\n");}
-		;
-
-st3:		 WHILE bool_exp BEGINLOOP statements ENDLOOP {printf("st3 -> WHILE bool_exp BEGINLOOP statements ENDLOOP\n");}
-		;
-
-st4:		DO BEGINLOOP statements ENDLOOP WHILE bool_exp {printf("st4 -> DO BEGINLOOP statements ENDLOOP WHILE bool_exp\n");}
-		;
-
-st5:		READ  var svar {printf("st5 -> READ vars\n");}
-		;
-
-st6:		WRITE var svar {printf("st6 -> WRITE vars\n");}
-		;
-
-st7:		CONTINUE {printf("st7 -> CONTINUE\n");}
-		;
-
-st8:		RETURN expression {printf("st8 -> RETURN expression\n");}
-		;
-
-svar:		{printf("svar -> epsilon\n");}
-		| COMMA var svar {printf("svar -> COMMA var svar\n");}
-		;
-
-bool_exp:	relation_and_exp {printf("bool_exp -> relation_and_exp\n");}
-		| relation_and_exp OR relation_and_exp {printf("bool_exp -> relation_and_exp OR relation_and_exp\n");}
-		;
-
-relation_and_exp: relation_exp {printf("relation_and_exp -> relation_exp\n");}
-		  | relation_and_exp AND relation_exp {printf("relation_exp -> relation_exp AND relation_exp\n");}
-		  ;
-
-relation_exp:	rexp {printf("relation_exp -> rexp");}
-		| NOT rexp {printf("relation_exp -> NOT rexp");}
-		;
-
-rexp:		expression comp expression {printf("rexp -> expression comp expression\n");}
-		| TRUE {printf("rexp -> TRUE\n");}
-		| FALSE {printf("rexp -> FALSE\n");}
-		| L_PAREN bool_exp R_PAREN {printf("rexp -> L_PAREN bool_exp R_PAREN\n");}
-		;
- 
-comp:		EQ {printf("comp -> EQ\n");}
-		| NEQ {printf("comp -> NEQ\n");}
-		| LT {printf("comp -> LT\n");}
-		| GT {printf("comp -> GT\n");}
-		| LTE {printf("comp -> LTE\n");}
-		| GTE {printf("comp -> GTE\n");}
-		;
-
-expression:	multiplicative_expression expaddsub {printf("expression -> multiplicative_expression expaddsub\n");}
-		;
-
-expaddsub:	/*empty*/ {printf("expaddsub -> epsilon\n");}
-		| ADD multiplicative_expression expaddsub {printf("expression -> ADD expaddsub\n");}
-		| SUB multiplicative_expression expaddsub {printf("expression -> SUB expaddsub\n");}
-		;
-
-multiplicative_expression: term multi_term{printf("multiplicative_expression -> term multi_term\n");}
-			   ;
-
-multi_term:	/*empty*/ {printf("multi_term -> epsilon\n");}
-		| MULT term  multi_term {printf("mutli_term -> MULT term\n");}
-		| DIV term multi_term {printf("multi_term -> DIV term\n");}
-		| MOD term multi_term {printf("mutli_term -> MOD term\n");}
-		;
-
-term:		var {printf("term -> var\n");}
-		| SUB var {printf("term -> SUB var\n");}
-		| NUMBER {printf("term -> NUMBER\n");}
-		| SUB NUMBER {printf("term -> SUB NUMBER\n");}
-		| L_PAREN expression R_PAREN {printf("term -> L_PAREN expression R_PAREN\n");}
-		| SUB L_PAREN expression R_PAREN {printf("term -> SUB L_PAREN expression R_PAREN\n");}
-		| ident ident_term {printf("term -> ident ident_term\n ");} 
-		;		
-
-ident_term:	L_PAREN expr_term R_PAREN {printf("ident_term -> L_PAREN expr_term R_PAREN");}
-		| L_PAREN R_PAREN {printf("ident_term -> L_PAREN R_PAREN");}
-		;
-
-expr_term:	expression {printf("expr_term -> expression\n");}
-		| expression COMMA expr_term {printf("expr_term -> expression COMMA expr_term\n");}
-		;	
-
-var:		IDENT {printf("var -> ident\n");}
-		| IDENT L_SQUARE_BRACKET expression R_SQUARE_BRACKET {printf("var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n");}
-		;
-
-vars:		var {printf("vars -> var\n");}
-		| var COMMA vars {printf("vars -> var COMMA vars\n");}
-		;		
-%%	
-
-int yyerror(string s)
-{
-  extern int yylineno;	// defined and maintained in lex.c
-  extern char *yytext;	// defined and maintained in lex.c
-  
-  cerr << "ERROR: " << s << " at symbol \"" << yytext;
-  cerr << "\" on line " << yylineno << endl;
-  exit(1);
-}	

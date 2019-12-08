@@ -45,16 +45,16 @@ extern int yydebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    INTEGER = 258,
-    ARRAY = 259,
-    OF = 260,
-    FUNCTION = 261,
-    BEGIN_PARAMS = 262,
-    END_PARAMS = 263,
-    BEGIN_LOCALS = 264,
-    END_LOCALS = 265,
-    BEGIN_BODY = 266,
-    END_BODY = 267,
+    FUNCTION = 258,
+    BEGIN_PARAMS = 259,
+    END_PARAMS = 260,
+    BEGIN_LOCALS = 261,
+    END_LOCALS = 262,
+    BEGIN_BODY = 263,
+    END_BODY = 264,
+    INTEGER = 265,
+    ARRAY = 266,
+    OF = 267,
     IF = 268,
     THEN = 269,
     ENDIF = 270,
@@ -66,33 +66,34 @@ extern int yydebug;
     CONTINUE = 276,
     READ = 277,
     WRITE = 278,
-    TRUE = 279,
-    FALSE = 280,
-    SEMICOLON = 281,
-    COLON = 282,
-    COMMA = 283,
-    R_PAREN = 284,
-    L_PAREN = 285,
-    L_SQUARE_BRACKET = 286,
-    R_SQUARE_BRACKET = 287,
-    RETURN = 288,
-    ASSIGN = 289,
-    NUMBER = 290,
-    IDENT = 291,
-    MULT = 292,
-    DIV = 293,
-    MOD = 294,
-    ADD = 295,
-    SUB = 296,
-    AND = 297,
-    OR = 298,
-    LT = 299,
-    GT = 300,
-    LTE = 301,
-    GTE = 302,
-    EQ = 303,
-    NEQ = 304,
-    NOT = 305
+    AND = 279,
+    OR = 280,
+    NOT = 281,
+    TRUE = 282,
+    FALSE = 283,
+    RETURN = 284,
+    SUB = 285,
+    ADD = 286,
+    MULT = 287,
+    DIV = 288,
+    MOD = 289,
+    EQ = 290,
+    NEQ = 291,
+    LT = 292,
+    GT = 293,
+    LTE = 294,
+    GTE = 295,
+    SEMICOLON = 296,
+    COLON = 297,
+    COMMA = 298,
+    L_PAREN = 299,
+    R_PAREN = 300,
+    L_SQUARE_BRACKET = 301,
+    R_SQUARE_BRACKET = 302,
+    ASSIGN = 303,
+    NUMBER = 304,
+    IDENT = 305,
+    UMINUS = 306
   };
 #endif
 
@@ -101,12 +102,13 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 10 "mini_l.y" /* yacc.c:1909  */
+#line 114 "mini_l.y" /* yacc.c:1909  */
 
-  string* dval;
   int ival;
+  char *string;
+  double dval;
 
-#line 110 "mini_l.tab.h" /* yacc.c:1909  */
+#line 112 "mini_l.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
