@@ -16,14 +16,16 @@
  extern FILE * yyin;
 
   
- vector<string> symTable; // symbols
- vector<string> symTableType;
- vector<string> paramTable; // parameters
- vector<string> opTable; // operators
- vector<string> opTableType;
- vector<string> toPrint; 
- vector<string> toPrintAll;
+ vector<string> symbol_table; // table for symbols
+ vector<string> symbol_table_type; // table for symbol types
+ vector<string> param_table; // parameter table
+ vector<string> ops_table; // operators table
+ vector<string> ops_table_type; // operators type table
+
+ vector<string> statements;  
+ vector<string> statements_all;
  vector<string> functions;
+
  vector<vector<string> > ifLabel;
  vector<vector<string> > LoopLabel;
  int labelCount = 0;
@@ -36,13 +38,13 @@
  bool isMain;
  bool isError;
  unsigned index(string s){
- 	for (unsigned i = 0; i < symTable.size(); i++){
-		if(symTable[i] == s){
+ 	for (unsigned i = 0; i < symbol_table.size(); i++){
+		if(symbol_table[i] == s){
 			return i;
 		}
 	}
-	for (unsigned i = 0; i < paramTable.size(); i++){
-		if (paramTable[i] == s){
+	for (unsigned i = 0; i < param_table.size(); i++){
+		if (param_table[i] == s){
 			return i;
 		}
 	}
@@ -54,13 +56,13 @@
  }
 
  bool identiferUsed (string s) {
-	for (unsigned i = 0; i < symTable.size(); i++) {
-		if (symTable[i] == s) {
+	for (unsigned i = 0; i < symbol_table.size(); i++) {
+		if (symbol_table[i] == s) {
 			return true;
 		}
 	}
-	for (unsigned i = 0; i < paramTable.size(); i++) {
-		if (paramTable[i] == s) {
+	for (unsigned i = 0; i < param_table.size(); i++) {
+		if (param_table[i] == s) {
 			return true;
 		}
 	}
@@ -100,139 +102,444 @@
 }
 
 %%
-prog_start:
-			functions
+prog_start: functions
 			;
 
-functions:
-			function functions 
-			| /* epsilon */
+functions: function functions 
+			| /* */
 			;
-function:
-			FUNCTION IDENT {functions.push_back($2);} SEMICOLON BEGIN_PARAMS {isParam = true;} declarations END_PARAMS printParams BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY 	
+
+function_ident: FUNCTION IDENT 
+				{
+					functions.push_back{$1};
+					statements_all.push_back(string("func ") + functions.back());
+				}
+				;
+
+begin_params: BEGIN_PARAMS {isParam = true; }
+			  ;
+
+end_params: END_PARAMS {isParam = false; }
+			;
+
+function: function_ident SEMICOLON begin_params declarations end_params BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY 	
 			{
-				toPrintAll.push_back(string("func ") + functions.back());
-				// symbol Table
-				for(unsigned i = 0; i < symTable.size(); i++) {
-					if(symTableType[i] == "INTEGER") {
-						toPrintAll.push_back(". " + symTable[i]);
+				
+				
+				for(unsigned i = 0; i < symbol_table.size(); i++) {
+					if(symbol_table_type[i] == "INTEGER") {
+						statements_all.push_back(". " + symbol_table[i]);
 					}
 					else {
-						toPrintAll.push_back(".[] " + symTable[i] + ", " + symTableType[i]);
+						statements_all.push_back(".[] " + symbol_table[i] + ", " + symbol_table_type[i]);
 					}
 				}
 
-				toPrintAll.push_back(": START");
-
-				
-				for(unsigned i = 0; i < toPrint.size(); i++) {
-					toPrintAll.push_back(toPrint[i]);
-				}
-
-				//clear tables
-				symTable.clear();
-				symTableType.clear();
-				opTable.clear();
-				opTableType.clear();
-				paramTable.clear();
-				toPrint.clear();
-
-				toPrintAll.push_back("endfunc");
-			}
-			;
-
-printParams:
-			{
-				 while(!paramTable.empty()) {
-				 	toPrint.push_back("= " + paramTable.back() + ", $" + to_string(paramCount)); 
-				 	paramTable.pop_back(); 
+				 while(!param_table.empty()) {
+				 	statements.push_back("= " + param_table.back() + ", $" + to_string(paramCount)); 
+				 	
+				 	param_table.pop_back(); 
 				 	paramCount++;
 				 } 
-				 isParam = false;
+				 
+				
+
+				
+				for(unsigned i = 0; i < statements.size(); i++) {
+					statements_all.push_back(statements[i]);
+				}
+
+				
+				symbol_table.clear();
+				symbol_table_type.clear();
+				ops_table.clear();
+				ops_table_type.clear();
+				param_table.clear();
+				statements.clear();
+				paramCount = 0; 
+
+				statements_all.push_back("endfunc");
 			}
 			;
 
-declarations:
-			declaration SEMICOLON declarations
-			| /* epsilon */
+
+declarations: declaration SEMICOLON declarations
+			| /*  */
 			;
-declaration: 
-			identifiers COLON INTEGER {
-				symTableType.push_back("INTEGER");
+
+declaration: identifiers COLON assign_dec 
+
+assign_dec:	INTEGER 
+			{
+				symbol_table_type.push_back("INTEGER");
 			}
-			| identifiers COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
-					if($5 == 0){
-						printf("Error line %d: %d is not a valid array size\n", curline, $5);
-					isError = true;					
+			| ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
+					if($3 == 0){
+						printf("Error line %d: %d is not a valid array size\n", curline, $3);
+						isError = true;					
 					}
-					symTableType.push_back(to_string($5));
+					else {
+						symbol_table_type.push_back(to_string($3));
+						}
 			}
-			| identifiers COLON ARRAY L_SQUARE_BRACKET SUB NUMBER R_SQUARE_BRACKET OF INTEGER{
-					printf("Error line %d: -%d is not a valid array size\n", curline, $6);
+			| ARRAY L_SQUARE_BRACKET SUB NUMBER R_SQUARE_BRACKET OF INTEGER{
+					printf("Error line %d: -%d is not a valid array size\n", curline, $4);
 					isError = true;
 			}
 			;
 
-identifiers:
-			IDENT {
-				if (identiferUsed($1)) {
+identifiers:  IDENT {
+				for (unsigned i = 0; i < symbol_table.size(); i++) {
+					if (symbol_table[i] == $1) {
 					printf("Error Line %d: symbol %s is already defined \n", curline, $1);
-					//yyerror("symbol %s is multiply-defined");
+					
 					isError = true;
+					}
 				}
-				if (isParam) {
-					paramTable.push_back($1);
+				for (unsigned i = 0; i < param_table.size(); i++) {
+					if (param_table[i] == $1) {
+						printf("Error Line %d: parameter %s is already defined \n", curline, $1);
+
+						isError = true;
+					}
 				}
-				symTable.push_back($1);
+				for (unsigned i = 0; i < functions.size(); i++) {
+					if (functions[i] == $1) {
+						printf("Error Line %d: function %s is already defined \n", curline, $1);
+
+						isError = true;
+					}
+				}
+
+				if (isParam == true) {
+					param_table.push_back("_" + $1);
+				}
+				symbol_table.push_back("_" + $1);
 			}
+
 			| IDENT COMMA identifiers {
-				if (identiferUsed($1)) {
-					printf("Error Line %d: symbol %s is already defined \n",curline, $1);
-					//yyerror("identifier has been declared!");
+				for (unsigned i = 0; i < symbol_table.size(); i++) {
+					if (symbol_table[i] == $1) {
+					printf("Error Line %d: symbol %s is already defined \n", curline, $1);
+					
+					isError = true;
+					}
+				}
+				for (unsigned i = 0; i < param_table.size(); i++) {
+					if (param_table[i] == $1) {
+						printf("Error Line %d: parameter %s is already defined \n", curline, $1);
+
+						isError = true;
+					}
+				}
+				for (unsigned i = 0; i < functions.size(); i++) {
+					if (functions[i] == $1) {
+						printf("Error Line %d: function %s is already defined \n", curline, $1);
+
+						isError = true;
+					}
+				}
+
+				symbol_table.push_back("_" + $1);
+				symbol_table_type.push_back("INTEGER");
+
+			}
+			;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+statements: statement SEMICOLON statements 
+			| statement SEMICOLON
+			;
+
+statement:	st1 
+			| st2 
+			| st3 
+			| st4 
+			| st5 
+			| st6 
+			| st7 
+			| st8 
+			| st9
+			;
+
+st1:	assign_variable ASSIGN expression {
+				//string op2 = ops_table.back();
+				//ops_table.pop_back();
+				//ops_table_type.pop_back();
+
+				string op = ops_table.back();
+				ops_table.pop_back();
+				string optype = ops_table_type.back();
+				ops_table_type.pop_back();
+				if (optype == "INTEGER") {
+					statements.push_back("= " + op + ", " + op2);
+				}
+				else {
+					statements.push_back("[]= _" + op + ", " + op2);
+				}
+			}
+		;
+
+assign_variable:
+			unsigned tmp = 0;
+			IDENT {
+				for (unsigned i = 0; i < symbol_table.size(); i++) {
+					if (symbol_table[i] == $1) {
+					printf("Error Line %d: used variable %s is already defined \n", curline, $1);
+					
+					isError = true;
+					tmp = i;
+					}
+				}
+				for (unsigned i = 0; i < param_table.size(); i++) {
+					if (param_table[i] == $1) {
+						printf("Error Line %d: used variable %s is already defined \n", curline, $1);
+
+						isError = true;
+						tmp = i;
+					}
+				}
+				for (unsigned i = 0; i < functions.size(); i++) {
+					if (functions[i] == $1) {
+						printf("Error Line %d: used variable %s is already defined \n", curline, $1);
+
+						isError = true;
+						tmp = i;
+					}
+				}
+
+				
+				//unsigned tmp = index($1);
+				if(symbol_table_type[tmp] != "INTEGER"){
+					printf("Error line %d: used int variable %s does not have an index\n", curline, $1);
 					isError = true;
 				}
-				symTable.push_back($1);
-				symTableType.push_back("INTEGER");
+				string temp_index = $1;
+				ops_table.push_back(temp_index);
+				ops_table_type.push_back("INTEGER");
+			}
 
+			| IDENT L_SQUARE_BRACKET expressions R_SQUARE_BRACKET 
+				{ unsigned tmp = 0;
+				for (unsigned i = 0; i < symbol_table.size(); i++) {
+					if (symbol_table[i] == $1) {
+					printf("Error Line %d: used variable %s is already defined \n", curline, $1);
+					
+					isError = true;
+					tmp = i;
+					}
+				}
+				for (unsigned i = 0; i < param_table.size(); i++) {
+					if (param_table[i] == $1) {
+						printf("Error Line %d: used variable %s is already defined \n", curline, $1);
+
+						isError = true;
+						tmp = i;
+					}
+				}
+				for (unsigned i = 0; i < functions.size(); i++) {
+					if (functions[i] == $1) {
+						printf("Error Line %d: used variable %s is already defined \n", curline, $1);
+
+						isError = true;
+						tmp = i;
+					}
+				}
+				//unsigned tmp = index($1);
+				if(symbol_table_type[tmp] == "INTEGER"){
+					printf("Error integer is used as an Array\n");
+				}
+				string temp = $1;
+				string size = ops_table.back();
+					ops_table.pop_back();
+					ops_table_type.pop_back();
+				string id = temp + ", " + size;
+				ops_table.push_back(id);
+				ops_table_type.push_back("ARRAY");
+			} 
+			;
+
+st2:	 if_bool THEN statements ENDIF { 
+				statements.push_back(":= " + ifLabel.back()[1]);
+				ifLabel.pop_back();
+			}
+		;
+
+
+st3:	 if_bool THEN statements if_else ENDIF { 
+				statements.push_back(": " + ifLabel.back()[2]);
+				ifLabel.pop_back();
+			}
+		;
+
+if_bool:  IF bool_exp {		/* ?= test_codition_temp_variable, goto first_label
+               		          =:second_label
+              			  :first_label
+             			   ## Statements
+                		  :second_label
+            			*/
+
+				vector<string> temp;
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				ifLabel.push_back(temp);
+				statements.push_back("?:= " + ifLabel.back()[0] + ", " + ops_table.back());
+					//if condition evaluate then goto first_label
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				statements.push_back(":= " + ifLabel.back()[1]); //goto second_label
+				statements.push_back(": " + ifLabel.back()[0]);  //declaration first_laebl
 			}
 			;
 
-
-statements:
-			statement SEMICOLON statements 
-			| /* epsilon */
+if_else:  ELSE statements {
+				statements.push_back(":= " + ifLabel.back()[2]);  
+				statements.push_back(": " + ifLabel.back()[1]);
+			}
 			;
-statement:
-			assign
-			| if_bool THEN statements ENDIF { 
-				toPrint.push_back(": " + ifLabel.back()[1]);
-				ifLabel.pop_back();
-			}
-			| if_bool THEN statements if_else ENDIF { 
-				toPrint.push_back(": " + ifLabel.back()[2]);
-				ifLabel.pop_back();
-			}
-			| while_bool statements ENDLOOP { 
-				toPrint.push_back(":= " + LoopLabel.back()[1]);
-				toPrint.push_back(": " + LoopLabel.back()[3]);
+
+st4:	 while_bool statements ENDLOOP { 
+				statements.push_back(":= " + LoopLabel.back()[1]);
+				statements.push_back(": " + LoopLabel.back()[3]);
 				LoopLabel.pop_back();
 			}
-			| do_loop WHILE bool_exp { // do loop
-				toPrint.push_back("?:= " + LoopLabel.back()[1] + ", " + opTable.back());
-					opTable.pop_back();
-					opTableType.pop_back();
+		;
+
+st5:	 do_loop WHILE bool_exp { 
+				statements.push_back("?:= " + LoopLabel.back()[1] + ", " + ops_table.back());
+				
+				ops_table.pop_back();
+				ops_table_type.pop_back();
 				LoopLabel.pop_back();
 			}
-			| READ readVars
-			| WRITE writeVars
-			| CONTINUE {
+	;
+
+
+
+while_bool:  while bool_exp BEGINLOOP {
+				statements.push_back("?:= " + LoopLabel.back()[2] + ", " +ops_table.back());
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				statements.push_back(":= " + LoopLabel.back()[3]);
+				statements.push_back(": " + LoopLabel.back()[2]);
+		}
+            ;
+
+while:   WHILE {		/* :while_loop_[NUM]
+		       		 //conditional statements
+		        	?= test_codition_temp_variable, conditonal_true_[NUM]
+		        	=:conditional_false_[NUM]
+		        	:conditional_true_[NUM]
+		        	## Statements
+		        	=: while_loop_[NUM]
+		        	:conditional_false[NUM]
+		    		*/
+
+				vector<string> temp;
+				temp.push_back("while");
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				LoopLabel.push_back(temp);
+				statements.push_back(": " + LoopLabel.back().at(1));
+		}
+	;
+
+do_loop:   do statements ENDLOOP {
+				statements.push_back(": " + LoopLabel.back()[2]);
+		}
+	;
+
+do:	DO BEGINLOOP {		 /* :do_while_loop_[NUM]
+				=:conditional_false_[NUM]
+				:conditional_true_[NUM]
+				## Statements
+				?= test_codition_temp_variable, conditonal_true_[NUM]
+			  	  */
+
+				vector<string> temp;
+				temp.push_back("do_while");
+				temp.push_back("L" + to_string(labelCount++));
+				temp.push_back("L" + to_string(labelCount++));
+				LoopLabel.push_back(temp);
+				statements.push_back(": " + LoopLabel.back()[1]);
+		}
+	;
+
+		
+st6:	READ readVars
+	;
+
+st7:	WRITE writeVars
+	;
+
+
+readVars:	var {
+				string op1 = ops_table.back();
+				string op1type = ops_table_type.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				if (op1type == "INTEGER") {
+					statements.push_back(".< " + op1);
+				}
+				else {
+					statements.push_back(".[]< " + op1);
+				}
+			}
+		
+		| var COMMA readVars { 
+				string op1 = ops_table.back();
+				string op1type = ops_table_type.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				if (op1type == "INTEGER") {
+					statements.push_back(".< " + op1);
+				}
+				else {
+					statements.push_back(".[]< " + op1);
+				}
+			}
+		;
+
+writeVars: 	var {
+				string op1 = ops_table.back();
+				string op1type = ops_table_type.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				if (op1type == "INTEGER") {
+					statements.push_back(".> " + op1);
+				}
+				else {
+					statements.push_back(".[]> " + op1);
+				}
+			}
+		
+		| var COMMA readVars { 
+				string op1 = ops_table.back();
+				string op1type = ops_table_type.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				if (op1type == "INTEGER") {
+					statements.push_back(".> " + op1);
+				}
+				else {
+					statements.push_back(".[]> " + op1);
+				}
+			}
+		;
+
+
+			
+st8:	CONTINUE {	//transfer control back to recent while loop - := while_loop_[NUM]
 				if(!LoopLabel.empty()) {
 					string loopType = LoopLabel.back()[0];
 					if (loopType == "while") {
-						toPrint.push_back(":= " + LoopLabel.back()[1]);
+						statements.push_back(":= " + LoopLabel.back()[1]);
 					}
 					else { 
-						toPrint.push_back(":= " + LoopLabel.back()[2]);
+						statements.push_back(":= " + LoopLabel.back()[2]);
 					}
 				}
 				if (LoopLabel.empty()){
@@ -240,424 +547,294 @@ statement:
 					isError = true;
 				}
 			}
-			| RETURN expression {
-				toPrint.push_back("ret " + opTable.back());
-					opTable.pop_back();
-					opTableType.pop_back();
-			}
-			;
+	;
 
-assign:
-			assignVar ASSIGN expression {
-				string op2 = opTable.back();
-				opTable.pop_back();
-				opTableType.pop_back();
+st9:	RETURN expression {
+				statements.push_back("ret " + ops_table.back());
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+			}
+	;
 
-				string op1 = opTable.back();
-				opTable.pop_back();
-				string op1type = opTableType.back();
-				opTableType.pop_back();
-				if (op1type == "INTEGER") {
-					toPrint.push_back("= " + op1 + ", " + op2);
-				}
-				else {
-					toPrint.push_back("[]= " + op1 + ", " + op2);
-				}
-			}
-			;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
 
-assignVar:
-			IDENT {
-				if (!identiferUsed($1)) {
-					printf("Error line %d: used variable %s was not previously declared\n", curline, $1);
-					isError = true;
-				}
-				unsigned tmp = index($1);
-				if(symTableType[tmp] != "INTEGER"){
-					printf("Error line %d: used int variable %s does not have an index\n", curline, $1);
-					isError = true;
-				}
-				string temp = $1;
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
-			}
-			| IDENT L_SQUARE_BRACKET expressions R_SQUARE_BRACKET {
-				if (!identiferUsed($1)) {
-					printf("Error line %d: used variable %s was not previously declared\n", curline, $1);
-					isError = true;
-				}
-				unsigned tmp = index($1);
-				if(symTableType[tmp] == "INTEGER"){
-					printf("using an integer as an array is dumb\n");
-				}
-				string temp = $1;
-				string size = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string id = temp + ", " + size;
-				opTable.push_back(id);
-				opTableType.push_back("ARRAY");
-			} 
-			;
 
-if_bool:
-			IF bool_exp {
-				vector<string> temp;
-				temp.push_back("L" + to_string(labelCount++));
-				temp.push_back("L" + to_string(labelCount++));
-				temp.push_back("L" + to_string(labelCount++));
-				ifLabel.push_back(temp);
-				toPrint.push_back("?:= " + ifLabel.back()[0] + ", " + opTable.back()); 
-					opTable.pop_back();
-					opTableType.pop_back();
-				toPrint.push_back(":= " + ifLabel.back()[1]);
-				toPrint.push_back(": " + ifLabel.back()[0]);
-			}
-			;
-
-if_else:
-			ELSE statements {
-				toPrint.push_back(":= " + ifLabel.back()[2]);
-				toPrint.push_back(": " + ifLabel.back()[1]);
-			}
-			;
-
-while_bool:
-			while bool_exp BEGINLOOP {
-				toPrint.push_back("?:= " + LoopLabel.back()[2] + ", " +opTable.back());
-					opTable.pop_back();
-					opTableType.pop_back();
-				toPrint.push_back(":= " + LoopLabel.back()[3]);
-				toPrint.push_back(": " + LoopLabel.back()[2]);
-			}
-			;
-
-while:
-			WHILE {
-				vector<string> temp;
-				temp.push_back("while");
-				temp.push_back("L" + to_string(labelCount++));
-				temp.push_back("L" + to_string(labelCount++));
-				temp.push_back("L" + to_string(labelCount++));
-				LoopLabel.push_back(temp);
-				toPrint.push_back(": " + LoopLabel.back().at(1));
-			}
-			;
-
-do_loop:
-			do statements ENDLOOP {
-				toPrint.push_back(": " + LoopLabel.back()[2]);
-			}
-			;
-
-do:
-			DO BEGINLOOP {
-				vector<string> temp;
-				temp.push_back("do_while");
-				temp.push_back("L" + to_string(labelCount++));
-				temp.push_back("L" + to_string(labelCount++));
-				LoopLabel.push_back(temp);
-				toPrint.push_back(": " + LoopLabel.back()[1]);
-			}
-			;
-
-readVars:
-			var {
-				string op1 = opTable.back();
-				string op1type = opTableType.back();
-				opTable.pop_back();
-				opTableType.pop_back();
-				if (op1type == "INTEGER") {
-					toPrint.push_back(".< " + op1);
-				}
-				else {
-					toPrint.push_back(".[]< " + op1);
-				}
-			}
-			| var COMMA readVars { //same as above var
-				string op1 = opTable.back();
-				string op1type = opTableType.back();
-				opTable.pop_back();
-				opTableType.pop_back();
-				if (op1type == "INTEGER") {
-					toPrint.push_back(".< " + op1);
-				}
-				else {
-					toPrint.push_back(".[]< " + op1);
-				}
-			}
-			;
-
-writeVars: //same as above readVars
-			var {
-				string op1 = opTable.back();
-				string op1type = opTableType.back();
-				opTable.pop_back();
-				opTableType.pop_back();
-				if (op1type == "INTEGER") {
-					toPrint.push_back(".> " + op1);
-				}
-				else {
-					toPrint.push_back(".[]> " + op1);
-				}
-			}
-			| var COMMA readVars { //same as above var
-				string op1 = opTable.back();
-				string op1type = opTableType.back();
-				opTable.pop_back();
-				opTableType.pop_back();
-				if (op1type == "INTEGER") {
-					toPrint.push_back(".> " + op1);
-				}
-				else {
-					toPrint.push_back(".[]> " + op1);
-				}
-			}
-			;
-
-bool_exp:
-			relation_and_exp 
-			| relation_and_exp OR bool_exp {
+bool_exp:	relation_and_exp 
+			
+		| relation_and_exp OR bool_exp {
 				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
 
-				string op2 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				toPrint.push_back("|| " + temp + ", " + op1 + ", " + op2);
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				statements.push_back("|| " + temp + ", " + op1 + ", " + op2);
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
 			}
-			;
-relation_and_exp:
-			relation_exp 
+		;
+
+relation_and_exp:	relation_exp 
+		
 			| relation_exp AND relation_and_exp {
 				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
 
-				string op2 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
 				
-				toPrint.push_back("&& " + temp + ", " + op1 + ", " + op2);
+				statements.push_back("&& " + temp + ", " + op1 + ", " + op2);
 				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
 			} 
-			;
-relation_exp: 
-			relation_exp1 
-			| NOT relation_exp1 {
-				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
+		;
 
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				
-				toPrint.push_back("! " + temp + ", " + op1);
-				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
-			}
-			;
-relation_exp1:
-			expression comp expression {
-				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
-
-				string op2 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string comp = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				
-				toPrint.push_back(comp + " " + temp + ", " + op1 + ", " + op2);
-				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
-			}
-			| TRUE {
-				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
-				
-				toPrint.push_back("= " + temp + ", 1");
-				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
-			}
-			| FALSE {
-				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
-				
-				toPrint.push_back("= " + temp + ", 0");
-				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
-			}
-			| L_PAREN bool_exp R_PAREN 
-			;
-
-comp:
-			EQ {
-				opTable.push_back("==");
-				opTableType.push_back("null");
-			}
-			| NEQ {
-				opTable.push_back("!=");
-				opTableType.push_back("null");
-			}
-			| LT {
-				opTable.push_back("<");
-				opTableType.push_back("null");
-			} 
-			| GT {
-				opTable.push_back(">");
-				opTableType.push_back("null");
-			}
-			| LTE {
-				opTable.push_back("<=");
-				opTableType.push_back("null");
-			}
-			| GTE {
-				opTable.push_back(">=");
-				opTableType.push_back("null");
-			}
-			;
-
-expressions:
-			expression 
-			| expression COMMA expression 
-			;
+relation_exp: 	rexp
 			
-expression:
-			mult_expression 
-			| mult_expression ADD expression { 
+		| NOT rexp {
 				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
-				string op2 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
 				
-				toPrint.push_back("+ " + temp + ", " + op1 + ", " + op2);
+				statements.push_back("! " + temp + ", " + op1);
 				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
 			}
-			| mult_expression SUB expression {
+		;
+
+rexp:		expression comp expression {
 				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
-				string op2 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
 				
-				toPrint.push_back("- " + temp + ", " + op1 + ", " + op2);
+				string comp = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
 				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
+				statements.push_back(comp + " " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+			
+		| TRUE {	//= t[temp_var_num], 1
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+				
+				statements.push_back("= " + temp + ", 1");
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+			
+		| FALSE {	//= t[temp_var_num], 0
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+				
+				statements.push_back("= " + temp + ", 0");
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+
+		| L_PAREN bool_exp R_PAREN 
+		
+		;
+
+comp:			EQ {
+				ops_table.push_back("==");
+				ops_table_type.push_back("null");
+			}
+
+			| NEQ {
+				ops_table.push_back("!=");
+				ops_table_type.push_back("null");
+			}
+
+			| LT {
+				ops_table.push_back("<");
+				ops_table_type.push_back("null");
+			} 
+
+			| GT {
+				ops_table.push_back(">");
+				ops_table_type.push_back("null");
+			}
+
+			| LTE {
+				ops_table.push_back("<=");
+				ops_table_type.push_back("null");
+			}
+
+			| GTE {
+				ops_table.push_back(">=");
+				ops_table_type.push_back("null");
 			}
 			;
 
-mult_expression:	
-			term
+expressions:	expression 
+		
+		| expression COMMA expression 
+
+		;
+			
+expression:	mult_expression 
+			
+		| mult_expression ADD expression { 
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("+ " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+
+		| mult_expression SUB expression {
+				string temp = "_t"+to_string(tempCount++);
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("- " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
+			}
+		;
+
+mult_expression:	term
+			
 			| term MULT mult_expression {
 				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
-				string op2 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
 				
-				toPrint.push_back("* " + temp + ", " + op1 + ", " + op2);
+				statements.push_back("* " + temp + ", " + op1 + ", " + op2);
 				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
 			}
+
 			| term DIV mult_expression {
 				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
-				string op2 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
+
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
 				
-				toPrint.push_back("/ " + temp + ", " + op1 + ", " + op2);
+				statements.push_back("/ " + temp + ", " + op1 + ", " + op2);
 				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
 			}
+
 			| term MOD mult_expression {
 				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
-				string op2 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
-				
-				toPrint.push_back("% " + temp + ", " + op1 + ", " + op2);
-				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
-			}
-			;
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
 
-term:
-			var 
-			| NUMBER {
-				opTable.push_back(to_string($1));
-				opTableType.push_back("INTEGER");
+				string op2 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				
+				statements.push_back("% " + temp + ", " + op1 + ", " + op2);
+				
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
 			}
-			| SUB NUMBER {
-				opTable.push_back(to_string($2*-1));
-				opTableType.push_back("INTEGER");
+		;
+
+term:		var 
+			
+		| NUMBER {
+				ops_table.push_back(to_string($1));
+				ops_table_type.push_back("INTEGER");
 			}
-			| L_PAREN expression R_PAREN 
-			| SUB L_PAREN expression R_PAREN {
+			
+		| SUB NUMBER {
+				ops_table.push_back(to_string($2*-1));
+				ops_table_type.push_back("INTEGER");
+			}
+			
+		| L_PAREN expression R_PAREN 
+
+		| SUB L_PAREN expression R_PAREN {
 				string temp = "_t"+to_string(tempCount++);
 				
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
+				string op1 = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
 				
-				toPrint.push_back("- " + temp + ", 0, " + op1);
+				statements.push_back("- " + temp + ", 0, " + op1);
 				
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
 			}
-			| IDENT L_PAREN expressions R_PAREN { //call a function
+			
+		| IDENT L_PAREN expressions R_PAREN { //call a function
 				// check if the funciton $1 has been defined
 				bool findFunction = false;
 				for (unsigned i = 0; i < functions.size(); i++) {
@@ -672,60 +849,60 @@ term:
 				}
 
 				string temp = "_t"+to_string(tempCount++);
-					symTable.push_back(temp);
-					symTableType.push_back("INTEGER");
+					symbol_table.push_back(temp);
+					symbol_table_type.push_back("INTEGER");
 
-				string op1 = opTable.back();
-					opTable.pop_back();
-					opTableType.pop_back();
+				string op1 = ops_table.back();
+					ops_table.pop_back();
+					ops_table_type.pop_back();
 
-				toPrint.push_back("param " + op1);
-				toPrint.push_back(string("call ") + $1 + ", " + temp);
+				statements.push_back("param " + op1);
+				statements.push_back(string("call ") + $1 + ", " + temp);
 
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
 			}
-			;
+		;
 
-var: 
-			IDENT {
+var: 		IDENT {
 				if (!identiferUsed($1)) {
 					printf("Error line %d: used variable %s was not previously defined\n", curline, $1);
 					//yyerror("variable not defined.");
 					isError = true;
 				}
 				unsigned tmp = index($1);
-				if(symTableType[tmp] != "INTEGER"){
+				if(symbol_table_type[tmp] != "INTEGER"){
 					printf("Error line %d: used array variable \"%s\" is missing a specified index\n", curline, $1);
 					isError = true;
 				}
 				string temp = $1;
-				opTable.push_back(temp);
-				opTableType.push_back("INTEGER");
+				ops_table.push_back(temp);
+				ops_table_type.push_back("INTEGER");
 			}
-			| IDENT L_SQUARE_BRACKET expressions R_SQUARE_BRACKET {
+			
+		| IDENT L_SQUARE_BRACKET expressions R_SQUARE_BRACKET {
 				if (!identiferUsed($1)) {
 					printf("Error line %d: used variable %s was not previously defined\n", curline, $1);
 					//yyerror("variable not defined.");
 					isError = true;
 				}
 				unsigned tmp = index($1);
-				if(symTableType[tmp] == "INTEGER"){
+				if(symbol_table_type[tmp] == "INTEGER"){
 					printf("Error line %d: used integer variable \"%s\" does not have an index\n",curline, $1);
 					isError = true;
 				}
 				string temp = "_t"+to_string(tempCount++);
-				symTable.push_back(temp);
-				symTableType.push_back("INTEGER");
+				symbol_table.push_back(temp);
+				symbol_table_type.push_back("INTEGER");
 
-				string arraySize = opTable.back();
-				opTable.pop_back();
-				opTableType.pop_back();
-				opTable.push_back(temp);
-				opTableType.push_back("ARRAY");
-				toPrint.push_back("=[] "+ temp + ", " + $1 + ", " + arraySize);
+				string arraySize = ops_table.back();
+				ops_table.pop_back();
+				ops_table_type.pop_back();
+				ops_table.push_back(temp);
+				ops_table_type.push_back("ARRAY");
+				statements.push_back("=[] "+ temp + ", " + $1 + ", " + arraySize);
 			} 
-			;
+		;
 
 %%
 
@@ -754,8 +931,8 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	for(unsigned i = 0; i < toPrintAll.size(); i++) {
-		cout << toPrintAll[i] <<endl;
+	for(unsigned i = 0; i < statements_all.size(); i++) {
+		cout << statements_all[i] <<endl;
 	}
 
 	return 0;
