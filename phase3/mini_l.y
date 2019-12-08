@@ -54,7 +54,7 @@
  bool isParam;
  bool isMain;
  bool isError;
- unsigned index(string s){
+ unsigned index_return(string s){
  	for (unsigned i = 0; i < symbol_table.size(); i++){
 		if(symbol_table[i] == s){
 			return i;
@@ -72,7 +72,7 @@
 	}
  }
 
- bool identiferUsed (string s) {
+ bool identifer_used (string s) {
 	for (unsigned i = 0; i < symbol_table.size(); i++) {
 		if (symbol_table[i] == s) {
 			return true;
@@ -206,27 +206,14 @@ assign_dec:	INTEGER
 			;
 
 identifiers:  IDENT {
-				for (unsigned i = 0; i < symbol_table.size(); i++) {
-					if (symbol_table[i] == $1) {
+				for (unsigned i = 0, j = 0, k = 0; i < symbol_table.size() || j < param_table.size() || k < functions.size(); i++, j++, k++) {
+					if (symbol_table[i] == $1 || param_table[j] == $1) || functions[k] == $1) {
 					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
 					
 					isError = true;
 					}
 				}
-				for (unsigned i = 0; i < param_table.size(); i++) {
-					if (param_table[i] == $1) {
-						printf("Error Line %d: parameter %s is already defined \n", currline, $1);
-
-						isError = true;
-					}
-				}
-				for (unsigned i = 0; i < functions.size(); i++) {
-					if (functions[i] == $1) {
-						printf("Error Line %d: function %s is already defined \n", currline, $1);
-
-						isError = true;
-					}
-				}
+				
 
 				if (isParam == true) {
 					param_table.push_back($1);
@@ -235,27 +222,14 @@ identifiers:  IDENT {
 			}
 
 			| IDENT COMMA identifiers {
-				for (unsigned i = 0; i < symbol_table.size(); i++) {
-					if (symbol_table[i] == $1) {
+				for (unsigned i = 0, j = 0, k = 0; i < symbol_table.size() || j < param_table.size() || k < functions.size(); i++, j++, k++) {
+					if (symbol_table[i] == $1 || param_table[j] == $1) || functions[k] == $1) {
 					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
 					
 					isError = true;
 					}
 				}
-				for (unsigned i = 0; i < param_table.size(); i++) {
-					if (param_table[i] == $1) {
-						printf("Error Line %d: parameter %s is already defined \n", currline, $1);
-
-						isError = true;
-					}
-				}
-				for (unsigned i = 0; i < functions.size(); i++) {
-					if (functions[i] == $1) {
-						printf("Error Line %d: function %s is already defined \n", currline, $1);
-
-						isError = true;
-					}
-				}
+				
 
 				symbol_table.push_back($1);
 				symbol_table_type.push_back("INTEGER");
@@ -301,30 +275,15 @@ st1:	assign_variable ASSIGN expression {
 assign_variable:
 			
 			IDENT { unsigned tmp = 0;
-				for (unsigned i = 0; i < symbol_table.size(); i++) {
-					if (symbol_table[i] == $1) {
-					printf("Error Line %d: used variable %s is already defined \n", currline, $1);
+				for (unsigned i = 0, j = 0, k = 0; i < symbol_table.size() || j < param_table.size() || k < functions.size(); i++, j++, k++) {
+					if (symbol_table[i] == $1 || param_table[j] == $1) || functions[k] == $1) {
+					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
 					
 					isError = true;
 					tmp = i;
 					}
 				}
-				for (unsigned i = 0; i < param_table.size(); i++) {
-					if (param_table[i] == $1) {
-						printf("Error Line %d: used variable %s is already defined \n", currline, $1);
-
-						isError = true;
-						tmp = i;
-					}
-				}
-				for (unsigned i = 0; i < functions.size(); i++) {
-					if (functions[i] == $1) {
-						printf("Error Line %d: used variable %s is already defined \n", currline, $1);
-
-						isError = true;
-						tmp = i;
-					}
-				}
+				
 
 				
 				//unsigned tmp = index($1);
@@ -339,30 +298,15 @@ assign_variable:
 
 			| IDENT L_SQUARE_BRACKET expressions R_SQUARE_BRACKET 
 				{ unsigned tmp = 0;
-				for (unsigned i = 0; i < symbol_table.size(); i++) {
-					if (symbol_table[i] == $1) {
-					printf("Error Line %d: used variable %s is already defined \n", currline, $1);
+				for (unsigned i = 0, j = 0, k = 0; i < symbol_table.size() || j < param_table.size() || k < functions.size(); i++, j++, k++) {
+					if (symbol_table[i] == $1 || param_table[j] == $1) || functions[k] == $1) {
+					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
 					
 					isError = true;
 					tmp = i;
 					}
 				}
-				for (unsigned i = 0; i < param_table.size(); i++) {
-					if (param_table[i] == $1) {
-						printf("Error Line %d: used variable %s is already defined \n", currline, $1);
-
-						isError = true;
-						tmp = i;
-					}
-				}
-				for (unsigned i = 0; i < functions.size(); i++) {
-					if (functions[i] == $1) {
-						printf("Error Line %d: used variable %s is already defined \n", currline, $1);
-
-						isError = true;
-						tmp = i;
-					}
-				}
+				
 				//unsigned tmp = index($1);
 				if(symbol_table_type[tmp] == "INTEGER"){
 					printf("Error integer is used as an Array\n");
