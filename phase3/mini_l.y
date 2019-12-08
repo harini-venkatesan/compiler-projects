@@ -5,6 +5,28 @@
  #include "heading.h"
  int yyerror(string s);
  int yylex(void);
+ 
+ int param_val = 0;
+ bool add_to_param_table = false; 
+
+ vector<string> param_table;
+ vector<string> func_table;
+ vector<string> sym_table;
+ vector<string> sym_type;
+ vector<string> op;
+ vector<string> stmnt_vctr;
+
+ string temp;
+ int temp_count;
+ int label_count;
+
+ vector <vector <string> > if_label;
+ vector <vector <string> > loop_label; 
+
+ stack <string> param_queue;
+ stack <string> read_queue;
+ 
+ stringstream m;  
 %}
 
 %union{
@@ -26,33 +48,72 @@
 
 %%
 
-prog_start:	function {printf("prog_start -> functions\n");}
+prog_start:	functions 
 		;
 
 
-functions:	function functions {printf("functions -> function functions\n");}
-		| {printf("function -> epsilon\n");}
+functions:	function functions
+		| /**/
 		;
 
-function:	FUNCTION IDENT SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {printf("FUNCTION INDENT SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY\n");}
+begin_params:	BEGIN_PARAMS { add_to_param_table = true;}
 		;
 
-declarations:	declaration SEMICOLON declarations {printf("declrations -> decleration SEMICOLON decleration\n");}
-		| {printf("declarations -> epsilon\n");}
+end_params:	END_PARAMS { add_to_param_table = false;}
 		;
 
-declaration:	identifiers COLON assign {printf("declaration -> identifiers COLON assign\n");}
+function:	FUNCTION IDENT SEMICOLON begin_params declarations end_params BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY
+		 {  
+			func_table.push_back(*($2));
+			cout <<"func "<<*($2)<<endl;
+			
+			for(unsigned int i = 0; i < sym_table.size(); i++)
+			 { if(sym_type.at(i) == "INTEGER")
+				cout << ". "<<sym_table.at(i) << endl;
+			   else 
+				cout << ".[] "<<sym_table.at(i) <<", "<<sym_type.at(i) <<endl;
+			 }
+				
+			while(!param_table.empty()){
+				cout<<"= "<<param_table.front()<<", $"<<param_val<<endl;
+				param_table.erase(param_table.begin());
+				param_val += 1;
+			}
+	
+	 		for(unsigned int j = 0; j < stmnt_vctr.size(); j++){
+				cout << stmnt_vctr.at(j) << endl; }
+
+			cout <<"end func"<<endl;
+			stmnt_vctr.clear();
+			sym_table.clear();
+			sym_type.clear();
+			param_table.clear();
+			param_val = 0; 
+		  }
 		;
 
-identifiers:	ident {printf("identifiers -> ident\n");}
-		| IDENT COMMA identifiers {printf("identifiers -> ident COMMA identifiers\n");}
+declarations:	declaration SEMICOLON declarations 
+		| /* */
 		;
 
-ident:		IDENT {printf("ident -> IDENT\n");}
+declaration:	identifiers COLON assign 
 		;
 
-assign:		INTEGER {printf("assign -> INTEGER\n");}
-		|ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {printf("assign -> COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER\n");}
+identifiers:	ident
+		| IDENT COMMA identifiers 
+		  { sym_table.push_back("_" + *($1));
+		    sym_type.push_back("INTEGER"); 
+		  } 
+		;
+
+ident:		IDENT { sym_table.push_back("_" + *($1)); 
+			if(add_to_param_table == true)
+				param_table.push_back("_" + *($1));
+		      }
+		;
+
+assign:		INTEGER { sym_type.push_back("INTEGER"); }
+		|ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {  }
 		;
 
 statements:	statement SEMICOLON statements {printf("statements -> statement SEMICOLON statements\n");}
