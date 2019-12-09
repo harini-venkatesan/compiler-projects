@@ -1,4 +1,4 @@
-##primes.min: compute primes using Sieve of Eratosthenes
+##  primes.min: compute primes using Sieve of Eratosthenes
 ##  (http://en.wikipedia.org/wiki/Sieve_of_Eratosthenes)
 ##
 ##  Compute primes up to a specified n by crossing out multiples of successively
