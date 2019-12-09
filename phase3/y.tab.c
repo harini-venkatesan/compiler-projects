@@ -108,7 +108,7 @@
  vector<string> statements_all;
  vector<string> functions;
 
- vector<vector<string> > ifLabel;
+ vector<vector<string> > if_label;
  vector<vector<string> > LoopLabel;
  int labelCount = 0;
  int varCount = 0;
@@ -1668,8 +1668,8 @@ yyreduce:
   case 32:
 #line 318 "mini_l.y" /* yacc.c:1646  */
     { 
-				statements.push_back(": " + ifLabel.back()[1]);
-				ifLabel.pop_back();
+				statements.push_back(": " + if_label.back()[1]);
+				if_label.pop_back();
 			}
 #line 1675 "y.tab.c" /* yacc.c:1646  */
     break;
@@ -1677,8 +1677,8 @@ yyreduce:
   case 33:
 #line 325 "mini_l.y" /* yacc.c:1646  */
     { 
-				statements.push_back(": " + ifLabel.back()[2]);
-				ifLabel.pop_back();
+				statements.push_back(": " + if_label.back()[2]);
+				if_label.pop_back();
 			}
 #line 1684 "y.tab.c" /* yacc.c:1646  */
     break;
@@ -1696,13 +1696,13 @@ yyreduce:
 				temp.push_back("L" + to_string(labelCount++));
 				temp.push_back("L" + to_string(labelCount++));
 				temp.push_back("L" + to_string(labelCount++));
-				ifLabel.push_back(temp);
-				statements.push_back("?:= " + ifLabel.back()[0] + ", " + ops_table.back());
+				if_label.push_back(temp);
+				statements.push_back("?:= " + if_label.back()[0] + ", " + ops_table.back());
 					//if condition evaluate then goto first_label
 				ops_table.pop_back();
 				ops_table_type.pop_back();
-				statements.push_back(":= " + ifLabel.back()[1]); //goto second_label
-				statements.push_back(": " + ifLabel.back()[0]);  //declaration first_laebl
+				statements.push_back(":= " + if_label.back()[1]); //goto second_label
+				statements.push_back(": " + if_label.back()[0]);  //declaration first_laebl
 			}
 #line 1708 "y.tab.c" /* yacc.c:1646  */
     break;
@@ -1710,8 +1710,8 @@ yyreduce:
   case 35:
 #line 352 "mini_l.y" /* yacc.c:1646  */
     {
-				statements.push_back(":= " + ifLabel.back()[2]);  
-				statements.push_back(": " + ifLabel.back()[1]);
+				statements.push_back(":= " + if_label.back()[2]);  
+				statements.push_back(": " + if_label.back()[1]);
 			}
 #line 1717 "y.tab.c" /* yacc.c:1646  */
     break;
@@ -2552,11 +2552,11 @@ int main(int argc, char **argv) {
 	}
 
 	if (!isMain) {
-		printf("Error: No main function defined\n");
+		printf("Error: Main function is not declared\n");
 		return -1;
 	}
 	if (isError) {
-		printf("Error\n");
+		
 		return -1;
 	}
 

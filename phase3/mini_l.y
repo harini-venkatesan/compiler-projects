@@ -878,11 +878,11 @@ int main(int argc, char **argv) {
 	}
 
 	if (!isMain) {
-		printf("Error: No main function defined\n");
+		printf("Error: Main function is not declared\n");
 		return -1;
 	}
 	if (isError) {
-		printf("Error\n");
+		
 		return -1;
 	}
 
