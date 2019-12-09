@@ -43,7 +43,7 @@
  vector<string> statements_all;
  vector<string> functions;
 
- vector<vector<string> > ifLabel;
+ vector<vector<string> > if_label;
  vector<vector<string> > LoopLabel;
  int labelCount = 0;
  int varCount = 0;
@@ -316,15 +316,15 @@ assign_variable:
 			;
 
 st2:	 if_bool THEN statements ENDIF { 
-				statements.push_back(": " + ifLabel.back()[1]);
-				ifLabel.pop_back();
+				statements.push_back(": " + if_label.back()[1]);
+				if_label.pop_back();
 			}
 		;
 
 
 st3:	 if_bool THEN statements if_else ENDIF { 
-				statements.push_back(": " + ifLabel.back()[2]);
-				ifLabel.pop_back();
+				statements.push_back(": " + if_label.back()[2]);
+				if_label.pop_back();
 			}
 		;
 
@@ -339,19 +339,19 @@ if_bool:  IF bool_exp {		/* ?= test_codition_temp_variable, goto first_label
 				temp.push_back("L" + to_string(labelCount++));
 				temp.push_back("L" + to_string(labelCount++));
 				temp.push_back("L" + to_string(labelCount++));
-				ifLabel.push_back(temp);
-				statements.push_back("?:= " + ifLabel.back()[0] + ", " + ops_table.back());
+				if_label.push_back(temp);
+				statements.push_back("?:= " + if_label.back()[0] + ", " + ops_table.back());
 					//if condition evaluate then goto first_label
 				ops_table.pop_back();
 				ops_table_type.pop_back();
-				statements.push_back(":= " + ifLabel.back()[1]); //goto second_label
-				statements.push_back(": " + ifLabel.back()[0]);  //declaration first_laebl
+				statements.push_back(":= " + if_label.back()[1]); //goto second_label
+				statements.push_back(": " + if_label.back()[0]);  //declaration first_laebl
 			}
 			;
 
 if_else:  ELSE statements {
-				statements.push_back(":= " + ifLabel.back()[2]);  
-				statements.push_back(": " + ifLabel.back()[1]);
+				statements.push_back(":= " + if_label.back()[2]);  
+				statements.push_back(": " + if_label.back()[1]);
 			}
 			;
 
