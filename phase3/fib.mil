@@ -1,0 +1,36 @@
+func fibonacci
+. k
+. _t0
+. _t1
+. _t2
+. _t3
+. _t4
+. _t5
+: START
+= k, $0
+<= _t0, k, 1
+?:= L0, _t0
+:= L1
+: L0
+ret 1
+: L1
+- _t1, k, 1
+param _t1
+call fibonacci, _t2
+- _t3, k, 2
+param _t3
+call fibonacci, _t4
++ _t5, _t2, _t4
+ret _t5
+endfunc
+func main
+. n
+. fib_n
+. _t6
+: START
+.< n
+param n
+call fibonacci, _t6
+= fib_n, _t6
+.> fib_n
+endfunc

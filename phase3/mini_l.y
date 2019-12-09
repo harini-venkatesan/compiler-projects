@@ -139,7 +139,7 @@ begin_params: BEGIN_PARAMS {isParam = true; }
 end_params: END_PARAMS {isParam = false; }
 			;
 
-function: function_ident SEMICOLON begin_params declarations end_params BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY 	
+function: function_ident SEMICOLON begin_params declarations end_params print_params BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY 	
 			{
 				
 				
@@ -151,15 +151,9 @@ function: function_ident SEMICOLON begin_params declarations end_params BEGIN_LO
 						statements_all.push_back(".[] " + symbol_table[i] + ", " + symbol_table_type[i]);
 					}
 				}
-
-				 while(!param_table.empty()) {
-				 	statements.push_back("= " + param_table.back() + ", $" + to_string(paramCount)); 
-				 	
-				 	param_table.pop_back(); 
-				 	paramCount++;
-				 } 
-				 
 				
+				statements_all.push_back(": START");
+				 
 
 				
 				for(unsigned i = 0; i < statements.size(); i++) {
@@ -179,6 +173,15 @@ function: function_ident SEMICOLON begin_params declarations end_params BEGIN_LO
 			}
 			;
 
+print_params:	{
+			 while(!param_table.empty()) {
+			 	statements.push_back("= " + param_table.back() + ", $" + to_string(paramCount)); 
+			 	param_table.pop_back(); 
+			 	paramCount++;
+			 } 
+			 isParam = false;
+		}
+			;
 
 declarations: declaration SEMICOLON declarations
 			| /*  */
@@ -206,30 +209,28 @@ assign_dec:	INTEGER
 			;
 
 identifiers:  IDENT {
-				for (unsigned i = 0, j = 0, k = 0; i < symbol_table.size() || j < param_table.size() || k < functions.size(); i++, j++, k++) {
-					if (symbol_table[i] == $1 || param_table[j] == $1) || functions[k] == $1) {
+				if (identifer_used($1)) {
 					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
-					
+					//yyerror("symbol %s is multiply-defined");
 					isError = true;
-					}
 				}
-				
-
-				if (isParam == true) {
+				if (isParam) {
 					param_table.push_back($1);
 				}
 				symbol_table.push_back($1);
+
+			
+				//symbol_table.push_back($1);
 			}
 
 			| IDENT COMMA identifiers {
-				for (unsigned i = 0, j = 0, k = 0; i < symbol_table.size() || j < param_table.size() || k < functions.size(); i++, j++, k++) {
-					if (symbol_table[i] == $1 || param_table[j] == $1) || functions[k] == $1) {
-					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
-					
-					isError = true;
-					}
-				}
 				
+				 if (identifer_used($1)) {
+                                        printf("Error Line %d: symbol %s is already defined \n", currline, $1);
+                                        //yyerror("symbol %s is multiply-defined");
+                                        isError = true;
+                                }
+
 
 				symbol_table.push_back($1);
 				symbol_table_type.push_back("INTEGER");
@@ -267,23 +268,20 @@ st1:	assign_variable ASSIGN expression {
 					statements.push_back("= " + op + ", " + op2);
 				}
 				else {
-					statements.push_back("[]= _" + op + ", " + op2);
+					statements.push_back("[]= " + op + ", " + op2);
 				}
 			}
 		;
 
 assign_variable:
 			
-			IDENT { unsigned tmp = 0;
-				for (unsigned i = 0, j = 0, k = 0; i < symbol_table.size() || j < param_table.size() || k < functions.size(); i++, j++, k++) {
-					if (symbol_table[i] == $1 || param_table[j] == $1) || functions[k] == $1) {
-					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
-					
-					isError = true;
-					tmp = i;
-					}
-				}
+			IDENT { 
 				
+				if (!identifer_used($1)) {
+					printf("Error line %d: used variable %s was not previously declared\n", currline, $1);
+					isError = true;
+				}
+				unsigned tmp = index_return($1);
 
 				
 				//unsigned tmp = index($1);
@@ -297,15 +295,11 @@ assign_variable:
 			}
 
 			| IDENT L_SQUARE_BRACKET expressions R_SQUARE_BRACKET 
-				{ unsigned tmp = 0;
-				for (unsigned i = 0, j = 0, k = 0; i < symbol_table.size() || j < param_table.size() || k < functions.size(); i++, j++, k++) {
-					if (symbol_table[i] == $1 || param_table[j] == $1) || functions[k] == $1) {
-					printf("Error Line %d: symbol %s is already defined \n", currline, $1);
-					
+				{ if (!identifer_used($1)) {
+					printf("Error line %d: used variable %s was not previously declared\n", currline, $1);
 					isError = true;
-					tmp = i;
-					}
 				}
+				unsigned tmp = index_return($1);
 				
 				//unsigned tmp = index($1);
 				if(symbol_table_type[tmp] == "INTEGER"){
@@ -322,7 +316,7 @@ assign_variable:
 			;
 
 st2:	 if_bool THEN statements ENDIF { 
-				statements.push_back(":= " + ifLabel.back()[1]);
+				statements.push_back(": " + ifLabel.back()[1]);
 				ifLabel.pop_back();
 			}
 		;
@@ -826,12 +820,12 @@ term:		var
 		;
 
 var: 		IDENT {
-				if (!identiferUsed($1)) {
+				if (!identifer_used($1)) {
 					printf("Error line %d: used variable %s was not previously defined\n", currline, $1);
 					//yyerror("variable not defined.");
 					isError = true;
 				}
-				unsigned tmp = index($1);
+				unsigned tmp = index_return($1);
 				if(symbol_table_type[tmp] != "INTEGER"){
 					printf("Error line %d: used array variable \"%s\" is missing a specified index\n", currline, $1);
 					isError = true;
@@ -842,12 +836,12 @@ var: 		IDENT {
 			}
 			
 		| IDENT L_SQUARE_BRACKET expressions R_SQUARE_BRACKET {
-				if (!identiferUsed($1)) {
+				if (!identifer_used($1)) {
 					printf("Error line %d: used variable %s was not previously defined\n", currline, $1);
 					//yyerror("variable not defined.");
 					isError = true;
 				}
-				unsigned tmp = index($1);
+				unsigned tmp = index_return($1);
 				if(symbol_table_type[tmp] == "INTEGER"){
 					printf("Error line %d: used integer variable \"%s\" does not have an index\n",currline, $1);
 					isError = true;

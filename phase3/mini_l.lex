@@ -34,6 +34,7 @@ TRUE "true"
 FALSE "false"
 RETURN "return"
 DIGIT [0-9]
+LETTER [a-z]|[A-Z]
 WHITE [ \t]
    
 %%
@@ -82,11 +83,7 @@ WHITE [ \t]
 "<="           {currpos += yyleng; return LTE;}
 ">="           {currpos += yyleng; return GTE;}
 
-{DIGIT}+       {currpos += yyleng; return NUMBER; }
 
-[a-zA-Z][a-zA-Z0-9]*                 {currpos += yyleng; return IDENT;} /*Make sure it does not start with a digit or an underscore*/
-
-[a-zA-Z][a-zA-Z0-9_]*[a-zA-Z0-9]  {currpos += yyleng; return IDENT;} /*Identifiers with underscore in the middle*/ 
 
 
 ";"	       {currpos += yyleng; return SEMICOLON;}
@@ -98,20 +95,21 @@ WHITE [ \t]
 "]"	       {currpos += yyleng; return R_SQUARE_BRACKET;}
 ":="	       {currpos += yyleng; return ASSIGN;}
 
-[#].*	       {currline++; currpos = 1;}   /*Comments are avoided*/
+\n {currline++; currpos = 1;}
 
-[ ]            {currpos += yyleng;}        /*Spaces are avoided*/
+{LETTER}+|({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT})) {currpos += yyleng; yylval.string = strdup(yytext); return IDENT;}
 
-[ \t]+         {currpos += yyleng;}	 
+({DIGIT}+|"_"){LETTER}({LETTER}|{DIGIT})* {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currline, currpos, yytext); exit(0);}
 
-"\n"           {yylineno++, currline++; currpos = 1;} /*Move to a new line */
+{LETTER}({LETTER}|{DIGIT}|"_")*"_" {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", currline, currpos, yytext); exit(0);}
 
+##.*\n {currline++; currpos = 1;}
 
-[0-9_][a-zA-Z0-9_]*[a-zA-Z0-9_]      {printf("LEXER Error at line %d, column %d: identifier \"%s\" must begin with a letter\n",currline,currpos,yytext); currpos += yyleng; exit(0);} /* If it begins with an underscore or a number*/
+{DIGIT}+ {currpos += yyleng; yylval.ival = atof(yytext); return NUMBER;}
 
-[a-zA-Z][a-zA-Z0-9_]*[_]                {printf("LEXER Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", currline, currpos, yytext); currpos+= yyleng; exit(0);} /* If it ends with an underscore */
+{WHITE} {currpos += yyleng;}
 
-.              {printf("LEXER Error at line %d, column %d: unrecognized symbol \"%s\"\n", currline, currpos, yytext); exit(0);}
+. {printf("error at line %d, column %d: unrecognized symbol \"%s\"\n" ,currline,currpos,yytext ); exit(0);}
 
 %%
 

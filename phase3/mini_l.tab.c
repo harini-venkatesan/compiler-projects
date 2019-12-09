@@ -64,7 +64,7 @@
 /* Copy the first part of user declarations.  */
 #line 1 "mini_l.y" /* yacc.c:339  */
 
- #include "heading.h"
+// #include "heading.h"
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
@@ -78,11 +78,11 @@
  
  int yylex(void);
  void yyerror(const char *msg);
- extern int curline;
- extern int curpos;
+ extern int currline;
+ extern int currpos;
  extern FILE * yyin;
 
-
+/*
     template <typename T>
     std::string to_string(T value)
     {
@@ -96,7 +96,8 @@
       return os.str() ;
     }
  
- 
+ */
+
  vector<string> symbol_table; // table for symbols
  vector<string> symbol_table_type; // table for symbol types
  vector<string> param_table; // parameter table
@@ -118,7 +119,7 @@
  bool isParam;
  bool isMain;
  bool isError;
- unsigned index(string s){
+ unsigned index_return(string s){
  	for (unsigned i = 0; i < symbol_table.size(); i++){
 		if(symbol_table[i] == s){
 			return i;
@@ -136,7 +137,7 @@
 	}
  }
 
- bool identiferUsed (string s) {
+ bool identifer_used (string s) {
 	for (unsigned i = 0; i < symbol_table.size(); i++) {
 		if (symbol_table[i] == s) {
 			return true;
@@ -156,7 +157,7 @@
  }
 
 
-#line 160 "mini_l.tab.c" /* yacc.c:339  */
+#line 161 "mini_l.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -248,13 +249,13 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 114 "mini_l.y" /* yacc.c:355  */
+#line 115 "mini_l.y" /* yacc.c:355  */
 
   int ival;
   char *string;
   double dval;
 
-#line 258 "mini_l.tab.c" /* yacc.c:355  */
+#line 259 "mini_l.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -271,7 +272,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 275 "mini_l.tab.c" /* yacc.c:358  */
+#line 276 "mini_l.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -573,15 +574,15 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   121,   121,   124,   125,   128,   135,   138,   141,   182,
-     183,   186,   188,   192,   201,   207,   236,   267,   268,   271,
-     272,   273,   274,   275,   276,   277,   278,   279,   282,   302,
-     339,   379,   386,   392,   413,   419,   426,   437,   446,   466,
-     471,   488,   491,   495,   508,   522,   535,   551,   568,   578,
-     580,   599,   601,   621,   623,   639,   662,   673,   684,   688,
-     693,   698,   703,   708,   713,   719,   721,   725,   727,   746,
-     766,   768,   787,   806,   826,   828,   833,   838,   840,   853,
-     883,   899
+       0,   122,   122,   125,   126,   129,   136,   139,   142,   183,
+     184,   187,   189,   193,   202,   208,   223,   240,   241,   244,
+     245,   246,   247,   248,   249,   250,   251,   252,   255,   275,
+     294,   315,   322,   328,   349,   355,   362,   373,   382,   402,
+     407,   424,   427,   431,   444,   458,   471,   487,   504,   514,
+     516,   535,   537,   557,   559,   575,   598,   609,   620,   624,
+     629,   634,   639,   644,   649,   655,   657,   661,   663,   682,
+     702,   704,   723,   742,   762,   764,   769,   774,   776,   789,
+     819,   835
 };
 #endif
 
@@ -1460,28 +1461,28 @@ yyreduce:
   switch (yyn)
     {
         case 5:
-#line 129 "mini_l.y" /* yacc.c:1646  */
+#line 130 "mini_l.y" /* yacc.c:1646  */
     {
 					functions.push_back((yyvsp[0].string));
 					statements_all.push_back(string("func ") + functions.back());
 				}
-#line 1469 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1470 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 135 "mini_l.y" /* yacc.c:1646  */
+#line 136 "mini_l.y" /* yacc.c:1646  */
     {isParam = true; }
-#line 1475 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1476 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 138 "mini_l.y" /* yacc.c:1646  */
+#line 139 "mini_l.y" /* yacc.c:1646  */
     {isParam = false; }
-#line 1481 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1482 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 142 "mini_l.y" /* yacc.c:1646  */
+#line 143 "mini_l.y" /* yacc.c:1646  */
     {
 				
 				
@@ -1519,107 +1520,79 @@ yyreduce:
 
 				statements_all.push_back("endfunc");
 			}
-#line 1523 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1524 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 189 "mini_l.y" /* yacc.c:1646  */
+#line 190 "mini_l.y" /* yacc.c:1646  */
     {
 				symbol_table_type.push_back("INTEGER");
 			}
-#line 1531 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1532 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 192 "mini_l.y" /* yacc.c:1646  */
+#line 193 "mini_l.y" /* yacc.c:1646  */
     {
 					if((yyvsp[-3].ival) == 0){
-						printf("Error line %d: %d is not a valid array size\n", curline, (yyvsp[-3].ival));
+						printf("Error line %d: %d is not a valid array size\n", currline, (yyvsp[-3].ival));
 						isError = true;					
 					}
 					else {
 						symbol_table_type.push_back(to_string((yyvsp[-3].ival)));
 						}
 			}
-#line 1545 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1546 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 201 "mini_l.y" /* yacc.c:1646  */
+#line 202 "mini_l.y" /* yacc.c:1646  */
     {
-					printf("Error line %d: -%d is not a valid array size\n", curline, (yyvsp[-3].ival));
+					printf("Error line %d: -%d is not a valid array size\n", currline, (yyvsp[-3].ival));
 					isError = true;
 			}
-#line 1554 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1555 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 207 "mini_l.y" /* yacc.c:1646  */
+#line 208 "mini_l.y" /* yacc.c:1646  */
     {
-				for (unsigned i = 0; i < symbol_table.size(); i++) {
-					if (symbol_table[i] == (yyvsp[0].string)) {
-					printf("Error Line %d: symbol %s is already defined \n", curline, (yyvsp[0].string));
-					
+				if (identifer_used((yyvsp[0].string))) {
+					printf("Error Line %d: symbol %s is already defined \n", currline, (yyvsp[0].string));
+					//yyerror("symbol %s is multiply-defined");
 					isError = true;
-					}
 				}
-				for (unsigned i = 0; i < param_table.size(); i++) {
-					if (param_table[i] == (yyvsp[0].string)) {
-						printf("Error Line %d: parameter %s is already defined \n", curline, (yyvsp[0].string));
-
-						isError = true;
-					}
-				}
-				for (unsigned i = 0; i < functions.size(); i++) {
-					if (functions[i] == (yyvsp[0].string)) {
-						printf("Error Line %d: function %s is already defined \n", curline, (yyvsp[0].string));
-
-						isError = true;
-					}
-				}
-
-				if (isParam == true) {
+				if (isParam) {
 					param_table.push_back((yyvsp[0].string));
 				}
 				symbol_table.push_back((yyvsp[0].string));
+
+			
+				//symbol_table.push_back($1);
 			}
-#line 1587 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1574 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 236 "mini_l.y" /* yacc.c:1646  */
+#line 223 "mini_l.y" /* yacc.c:1646  */
     {
-				for (unsigned i = 0; i < symbol_table.size(); i++) {
-					if (symbol_table[i] == (yyvsp[-2].string)) {
-					printf("Error Line %d: symbol %s is already defined \n", curline, (yyvsp[-2].string));
-					
-					isError = true;
-					}
-				}
-				for (unsigned i = 0; i < param_table.size(); i++) {
-					if (param_table[i] == (yyvsp[-2].string)) {
-						printf("Error Line %d: parameter %s is already defined \n", curline, (yyvsp[-2].string));
+				
+				 if (identifer_used((yyvsp[-2].string))) {
+                                        printf("Error Line %d: symbol %s is already defined \n", currline, (yyvsp[-2].string));
+                                        //yyerror("symbol %s is multiply-defined");
+                                        isError = true;
+                                }
 
-						isError = true;
-					}
-				}
-				for (unsigned i = 0; i < functions.size(); i++) {
-					if (functions[i] == (yyvsp[-2].string)) {
-						printf("Error Line %d: function %s is already defined \n", curline, (yyvsp[-2].string));
-
-						isError = true;
-					}
-				}
 
 				symbol_table.push_back((yyvsp[-2].string));
 				symbol_table_type.push_back("INTEGER");
 
 			}
-#line 1619 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1592 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 282 "mini_l.y" /* yacc.c:1646  */
+#line 255 "mini_l.y" /* yacc.c:1646  */
     {
 				string op2 = ops_table.back();
 				ops_table.pop_back();
@@ -1636,77 +1609,40 @@ yyreduce:
 					statements.push_back("[]= _" + op + ", " + op2);
 				}
 			}
-#line 1640 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1613 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 302 "mini_l.y" /* yacc.c:1646  */
-    { unsigned tmp = 0;
-				for (unsigned i = 0; i < symbol_table.size(); i++) {
-					if (symbol_table[i] == (yyvsp[0].string)) {
-					printf("Error Line %d: used variable %s is already defined \n", curline, (yyvsp[0].string));
-					
+#line 275 "mini_l.y" /* yacc.c:1646  */
+    { 
+				
+				if (!identifer_used((yyvsp[0].string))) {
+					printf("Error line %d: used variable %s was not previously declared\n", currline, (yyvsp[0].string));
 					isError = true;
-					tmp = i;
-					}
 				}
-				for (unsigned i = 0; i < param_table.size(); i++) {
-					if (param_table[i] == (yyvsp[0].string)) {
-						printf("Error Line %d: used variable %s is already defined \n", curline, (yyvsp[0].string));
-
-						isError = true;
-						tmp = i;
-					}
-				}
-				for (unsigned i = 0; i < functions.size(); i++) {
-					if (functions[i] == (yyvsp[0].string)) {
-						printf("Error Line %d: used variable %s is already defined \n", curline, (yyvsp[0].string));
-
-						isError = true;
-						tmp = i;
-					}
-				}
+				unsigned tmp = index_return((yyvsp[0].string));
 
 				
 				//unsigned tmp = index($1);
 				if(symbol_table_type[tmp] != "INTEGER"){
-					printf("Error line %d: used int variable %s does not have an index\n", curline, (yyvsp[0].string));
+					printf("Error line %d: used int variable %s does not have an index\n", currline, (yyvsp[0].string));
 					isError = true;
 				}
 				string temp_index = (yyvsp[0].string);
 				ops_table.push_back(temp_index);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 1681 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1636 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 340 "mini_l.y" /* yacc.c:1646  */
-    { unsigned tmp = 0;
-				for (unsigned i = 0; i < symbol_table.size(); i++) {
-					if (symbol_table[i] == (yyvsp[-3].string)) {
-					printf("Error Line %d: used variable %s is already defined \n", curline, (yyvsp[-3].string));
-					
+#line 295 "mini_l.y" /* yacc.c:1646  */
+    { if (!identifer_used((yyvsp[-3].string))) {
+					printf("Error line %d: used variable %s was not previously declared\n", currline, (yyvsp[-3].string));
 					isError = true;
-					tmp = i;
-					}
 				}
-				for (unsigned i = 0; i < param_table.size(); i++) {
-					if (param_table[i] == (yyvsp[-3].string)) {
-						printf("Error Line %d: used variable %s is already defined \n", curline, (yyvsp[-3].string));
-
-						isError = true;
-						tmp = i;
-					}
-				}
-				for (unsigned i = 0; i < functions.size(); i++) {
-					if (functions[i] == (yyvsp[-3].string)) {
-						printf("Error Line %d: used variable %s is already defined \n", curline, (yyvsp[-3].string));
-
-						isError = true;
-						tmp = i;
-					}
-				}
+				unsigned tmp = index_return((yyvsp[-3].string));
+				
 				//unsigned tmp = index($1);
 				if(symbol_table_type[tmp] == "INTEGER"){
 					printf("Error integer is used as an Array\n");
@@ -1719,29 +1655,29 @@ yyreduce:
 				ops_table.push_back(id);
 				ops_table_type.push_back("ARRAY");
 			}
-#line 1723 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1659 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 379 "mini_l.y" /* yacc.c:1646  */
+#line 315 "mini_l.y" /* yacc.c:1646  */
     { 
 				statements.push_back(":= " + ifLabel.back()[1]);
 				ifLabel.pop_back();
 			}
-#line 1732 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1668 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 386 "mini_l.y" /* yacc.c:1646  */
+#line 322 "mini_l.y" /* yacc.c:1646  */
     { 
 				statements.push_back(": " + ifLabel.back()[2]);
 				ifLabel.pop_back();
 			}
-#line 1741 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1677 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 392 "mini_l.y" /* yacc.c:1646  */
+#line 328 "mini_l.y" /* yacc.c:1646  */
     {		/* ?= test_codition_temp_variable, goto first_label
                		          =:second_label
               			  :first_label
@@ -1761,30 +1697,30 @@ yyreduce:
 				statements.push_back(":= " + ifLabel.back()[1]); //goto second_label
 				statements.push_back(": " + ifLabel.back()[0]);  //declaration first_laebl
 			}
-#line 1765 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1701 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 413 "mini_l.y" /* yacc.c:1646  */
+#line 349 "mini_l.y" /* yacc.c:1646  */
     {
 				statements.push_back(":= " + ifLabel.back()[2]);  
 				statements.push_back(": " + ifLabel.back()[1]);
 			}
-#line 1774 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1710 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 419 "mini_l.y" /* yacc.c:1646  */
+#line 355 "mini_l.y" /* yacc.c:1646  */
     { 
 				statements.push_back(":= " + LoopLabel.back()[1]);
 				statements.push_back(": " + LoopLabel.back()[3]);
 				LoopLabel.pop_back();
 			}
-#line 1784 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1720 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 426 "mini_l.y" /* yacc.c:1646  */
+#line 362 "mini_l.y" /* yacc.c:1646  */
     { 
 				statements.push_back("?:= " + LoopLabel.back()[1] + ", " + ops_table.back());
 				
@@ -1792,11 +1728,11 @@ yyreduce:
 				ops_table_type.pop_back();
 				LoopLabel.pop_back();
 			}
-#line 1796 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1732 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 437 "mini_l.y" /* yacc.c:1646  */
+#line 373 "mini_l.y" /* yacc.c:1646  */
     {
 				statements.push_back("?:= " + LoopLabel.back()[2] + ", " +ops_table.back());
 				ops_table.pop_back();
@@ -1804,11 +1740,11 @@ yyreduce:
 				statements.push_back(":= " + LoopLabel.back()[3]);
 				statements.push_back(": " + LoopLabel.back()[2]);
 		}
-#line 1808 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1744 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 446 "mini_l.y" /* yacc.c:1646  */
+#line 382 "mini_l.y" /* yacc.c:1646  */
     {		/* :while_loop_[NUM]
 		       		 //conditional statements
 		        	?= test_codition_temp_variable, conditonal_true_[NUM]
@@ -1827,19 +1763,19 @@ yyreduce:
 				LoopLabel.push_back(temp);
 				statements.push_back(": " + LoopLabel.back().at(1));
 		}
-#line 1831 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1767 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 39:
-#line 466 "mini_l.y" /* yacc.c:1646  */
+#line 402 "mini_l.y" /* yacc.c:1646  */
     {
 				statements.push_back(": " + LoopLabel.back()[2]);
 		}
-#line 1839 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1775 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 40:
-#line 471 "mini_l.y" /* yacc.c:1646  */
+#line 407 "mini_l.y" /* yacc.c:1646  */
     {		 /* :do_while_loop_[NUM]
 				=:conditional_false_[NUM]
 				:conditional_true_[NUM]
@@ -1854,11 +1790,11 @@ yyreduce:
 				LoopLabel.push_back(temp);
 				statements.push_back(": " + LoopLabel.back()[1]);
 		}
-#line 1858 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1794 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 43:
-#line 495 "mini_l.y" /* yacc.c:1646  */
+#line 431 "mini_l.y" /* yacc.c:1646  */
     {
 				string op1 = ops_table.back();
 				string op1type = ops_table_type.back();
@@ -1871,11 +1807,11 @@ yyreduce:
 					statements.push_back(".[]< " + op1);
 				}
 			}
-#line 1875 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1811 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 44:
-#line 508 "mini_l.y" /* yacc.c:1646  */
+#line 444 "mini_l.y" /* yacc.c:1646  */
     { 
 				string op1 = ops_table.back();
 				string op1type = ops_table_type.back();
@@ -1888,11 +1824,11 @@ yyreduce:
 					statements.push_back(".[]< " + op1);
 				}
 			}
-#line 1892 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1828 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 45:
-#line 522 "mini_l.y" /* yacc.c:1646  */
+#line 458 "mini_l.y" /* yacc.c:1646  */
     {
 				string op1 = ops_table.back();
 				string op1type = ops_table_type.back();
@@ -1905,11 +1841,11 @@ yyreduce:
 					statements.push_back(".[]> " + op1);
 				}
 			}
-#line 1909 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1845 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 46:
-#line 535 "mini_l.y" /* yacc.c:1646  */
+#line 471 "mini_l.y" /* yacc.c:1646  */
     { 
 				string op1 = ops_table.back();
 				string op1type = ops_table_type.back();
@@ -1922,11 +1858,11 @@ yyreduce:
 					statements.push_back(".[]> " + op1);
 				}
 			}
-#line 1926 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1862 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 47:
-#line 551 "mini_l.y" /* yacc.c:1646  */
+#line 487 "mini_l.y" /* yacc.c:1646  */
     {	//transfer control back to recent while loop - := while_loop_[NUM]
 				if(!LoopLabel.empty()) {
 					string loopType = LoopLabel.back()[0];
@@ -1938,25 +1874,25 @@ yyreduce:
 					}
 				}
 				if (LoopLabel.empty()){
-					printf("Error line %d: continue statement not within a loop\n", curline);
+					printf("Error line %d: continue statement not within a loop\n", currline);
 					isError = true;
 				}
 			}
-#line 1946 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1882 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 48:
-#line 568 "mini_l.y" /* yacc.c:1646  */
+#line 504 "mini_l.y" /* yacc.c:1646  */
     {
 				statements.push_back("ret " + ops_table.back());
 				ops_table.pop_back();
 				ops_table_type.pop_back();
 			}
-#line 1956 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1892 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 50:
-#line 580 "mini_l.y" /* yacc.c:1646  */
+#line 516 "mini_l.y" /* yacc.c:1646  */
     {
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -1974,11 +1910,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 1978 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1914 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 52:
-#line 601 "mini_l.y" /* yacc.c:1646  */
+#line 537 "mini_l.y" /* yacc.c:1646  */
     {
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -1997,11 +1933,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2001 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1937 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 54:
-#line 623 "mini_l.y" /* yacc.c:1646  */
+#line 559 "mini_l.y" /* yacc.c:1646  */
     {
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -2016,11 +1952,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2020 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1956 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 55:
-#line 639 "mini_l.y" /* yacc.c:1646  */
+#line 575 "mini_l.y" /* yacc.c:1646  */
     {
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -2043,11 +1979,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2047 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1983 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 56:
-#line 662 "mini_l.y" /* yacc.c:1646  */
+#line 598 "mini_l.y" /* yacc.c:1646  */
     {	//= t[temp_var_num], 1
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -2058,11 +1994,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2062 "mini_l.tab.c" /* yacc.c:1646  */
+#line 1998 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 57:
-#line 673 "mini_l.y" /* yacc.c:1646  */
+#line 609 "mini_l.y" /* yacc.c:1646  */
     {	//= t[temp_var_num], 0
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -2073,65 +2009,65 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2077 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2013 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 59:
-#line 688 "mini_l.y" /* yacc.c:1646  */
+#line 624 "mini_l.y" /* yacc.c:1646  */
     {
 				ops_table.push_back("==");
 				ops_table_type.push_back("null");
 			}
-#line 2086 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2022 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 60:
-#line 693 "mini_l.y" /* yacc.c:1646  */
+#line 629 "mini_l.y" /* yacc.c:1646  */
     {
 				ops_table.push_back("!=");
 				ops_table_type.push_back("null");
 			}
-#line 2095 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2031 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 61:
-#line 698 "mini_l.y" /* yacc.c:1646  */
+#line 634 "mini_l.y" /* yacc.c:1646  */
     {
 				ops_table.push_back("<");
 				ops_table_type.push_back("null");
 			}
-#line 2104 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2040 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 62:
-#line 703 "mini_l.y" /* yacc.c:1646  */
+#line 639 "mini_l.y" /* yacc.c:1646  */
     {
 				ops_table.push_back(">");
 				ops_table_type.push_back("null");
 			}
-#line 2113 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2049 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 63:
-#line 708 "mini_l.y" /* yacc.c:1646  */
+#line 644 "mini_l.y" /* yacc.c:1646  */
     {
 				ops_table.push_back("<=");
 				ops_table_type.push_back("null");
 			}
-#line 2122 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2058 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 64:
-#line 713 "mini_l.y" /* yacc.c:1646  */
+#line 649 "mini_l.y" /* yacc.c:1646  */
     {
 				ops_table.push_back(">=");
 				ops_table_type.push_back("null");
 			}
-#line 2131 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2067 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 68:
-#line 727 "mini_l.y" /* yacc.c:1646  */
+#line 663 "mini_l.y" /* yacc.c:1646  */
     { 
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -2150,11 +2086,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2154 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2090 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 69:
-#line 746 "mini_l.y" /* yacc.c:1646  */
+#line 682 "mini_l.y" /* yacc.c:1646  */
     {
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -2173,11 +2109,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2177 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2113 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 71:
-#line 768 "mini_l.y" /* yacc.c:1646  */
+#line 704 "mini_l.y" /* yacc.c:1646  */
     {
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -2196,11 +2132,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2200 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2136 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 72:
-#line 787 "mini_l.y" /* yacc.c:1646  */
+#line 723 "mini_l.y" /* yacc.c:1646  */
     {
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -2219,11 +2155,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2223 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2159 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 73:
-#line 806 "mini_l.y" /* yacc.c:1646  */
+#line 742 "mini_l.y" /* yacc.c:1646  */
     {
 				string temp = "_t"+to_string(tempCount++);
 				symbol_table.push_back(temp);
@@ -2242,29 +2178,29 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2246 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2182 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 75:
-#line 828 "mini_l.y" /* yacc.c:1646  */
+#line 764 "mini_l.y" /* yacc.c:1646  */
     {
 				ops_table.push_back(to_string((yyvsp[0].ival)));
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2255 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2191 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 76:
-#line 833 "mini_l.y" /* yacc.c:1646  */
+#line 769 "mini_l.y" /* yacc.c:1646  */
     {
 				ops_table.push_back(to_string((yyvsp[0].ival)*-1));
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2264 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2200 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 78:
-#line 840 "mini_l.y" /* yacc.c:1646  */
+#line 776 "mini_l.y" /* yacc.c:1646  */
     {
 				string temp = "_t"+to_string(tempCount++);
 				
@@ -2277,11 +2213,11 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2281 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2217 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 79:
-#line 853 "mini_l.y" /* yacc.c:1646  */
+#line 789 "mini_l.y" /* yacc.c:1646  */
     { //call a function
 				// check if the funciton $1 has been defined
 				bool findFunction = false;
@@ -2292,7 +2228,7 @@ yyreduce:
 					}
 				}
 				if (!findFunction) {
-					printf("Error line %d: Function %s not defined\n", curline,(yyvsp[-3].string) );
+					printf("Error line %d: Function %s not defined\n", currline,(yyvsp[-3].string) );
 					isError = true;
 				}
 
@@ -2310,40 +2246,40 @@ yyreduce:
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2314 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2250 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 80:
-#line 883 "mini_l.y" /* yacc.c:1646  */
+#line 819 "mini_l.y" /* yacc.c:1646  */
     {
-				if (!identiferUsed((yyvsp[0].string))) {
-					printf("Error line %d: used variable %s was not previously defined\n", curline, (yyvsp[0].string));
+				if (!identifer_used((yyvsp[0].string))) {
+					printf("Error line %d: used variable %s was not previously defined\n", currline, (yyvsp[0].string));
 					//yyerror("variable not defined.");
 					isError = true;
 				}
-				unsigned tmp = index((yyvsp[0].string));
+				unsigned tmp = index_return((yyvsp[0].string));
 				if(symbol_table_type[tmp] != "INTEGER"){
-					printf("Error line %d: used array variable \"%s\" is missing a specified index\n", curline, (yyvsp[0].string));
+					printf("Error line %d: used array variable \"%s\" is missing a specified index\n", currline, (yyvsp[0].string));
 					isError = true;
 				}
 				string temp = (yyvsp[0].string);
 				ops_table.push_back(temp);
 				ops_table_type.push_back("INTEGER");
 			}
-#line 2334 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2270 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
   case 81:
-#line 899 "mini_l.y" /* yacc.c:1646  */
+#line 835 "mini_l.y" /* yacc.c:1646  */
     {
-				if (!identiferUsed((yyvsp[-3].string))) {
-					printf("Error line %d: used variable %s was not previously defined\n", curline, (yyvsp[-3].string));
+				if (!identifer_used((yyvsp[-3].string))) {
+					printf("Error line %d: used variable %s was not previously defined\n", currline, (yyvsp[-3].string));
 					//yyerror("variable not defined.");
 					isError = true;
 				}
-				unsigned tmp = index((yyvsp[-3].string));
+				unsigned tmp = index_return((yyvsp[-3].string));
 				if(symbol_table_type[tmp] == "INTEGER"){
-					printf("Error line %d: used integer variable \"%s\" does not have an index\n",curline, (yyvsp[-3].string));
+					printf("Error line %d: used integer variable \"%s\" does not have an index\n",currline, (yyvsp[-3].string));
 					isError = true;
 				}
 				string temp = "_t"+to_string(tempCount++);
@@ -2357,11 +2293,11 @@ yyreduce:
 				ops_table_type.push_back("ARRAY");
 				statements.push_back("=[] "+ temp + ", " + (yyvsp[-3].string) + ", " + arraySize);
 			}
-#line 2361 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2297 "mini_l.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 2365 "mini_l.tab.c" /* yacc.c:1646  */
+#line 2301 "mini_l.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2589,7 +2525,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 923 "mini_l.y" /* yacc.c:1906  */
+#line 859 "mini_l.y" /* yacc.c:1906  */
 
 
 
@@ -2625,9 +2561,9 @@ int main(int argc, char **argv) {
 }
 
 void yyerror(const char *msg) {
-//	extern int curline;
-//	 extern int curpos;
 
-	printf("** Line %d, position %d: %s\n", curline, curpos, msg);
+
+
+	printf("** Line %d, position %d: %s\n", currline, currpos, msg);
 }
 

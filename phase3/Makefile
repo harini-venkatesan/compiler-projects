@@ -5,4 +5,3 @@ parse: mini_l.lex mini_l.y
 
 clean:
 	rm -f lex.yy.c y.tab.* y.output *.o parser
-
